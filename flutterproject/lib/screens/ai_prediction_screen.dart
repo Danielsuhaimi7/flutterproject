@@ -39,7 +39,7 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
         });
       } else {
         setState(() {
-          result = "Error has occured: ${response.statusCode} - ${response.reasonPhrase}";
+          result = "Error: ${response.statusCode} - ${response.reasonPhrase}";
         });
       }
     } catch (e) {
