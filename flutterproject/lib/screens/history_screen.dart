@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
-import 'navigation_screen.dart'; // Import this if NavigationScreen is in a different file
+import 'navigation_screen.dart';
+
+String studentName = "";
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -24,6 +26,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   Future<void> _fetchReservations() async {
     final prefs = await SharedPreferences.getInstance();
     studentId = prefs.getString('studentId') ?? "";
+    studentName = prefs.getString('name') ?? "";
 
     if (studentId.isNotEmpty) {
       final reservations = await ApiService.getUserReservationDetails(studentId);
@@ -138,7 +141,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text("Daniel Suhaimi", style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text(studentName, style: const TextStyle(fontWeight: FontWeight.bold)),
                             const SizedBox(height: 4),
                             Text(studentId, style: const TextStyle(color: Colors.grey)),
                           ],
