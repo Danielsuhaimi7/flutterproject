@@ -32,6 +32,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         "email": emailController.text.trim(),
         "password": passwordController.text.trim(),
         "phone": phoneController.text.trim(),
+        "role": "user", // 👈 explicitly specify role
       });
 
       if (success) {
