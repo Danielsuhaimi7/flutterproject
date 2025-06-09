@@ -53,6 +53,24 @@ class _NavigationScreenState extends State<NavigationScreen> {
     return positions;
   }
 
+  String _formatTime(dynamic timeData) {
+    try {
+      String timeString = timeData.toString();
+
+      if (RegExp(r'^\d{1,2}$').hasMatch(timeString)) {
+        timeString = '${timeString.padLeft(2, '0')}:00';
+      } else if (RegExp(r'^\d{1,2}:\d{1,2}$').hasMatch(timeString)) {
+        timeString = '$timeString:00';
+      }
+
+      final dateTime = DateTime.parse('2020-01-01T$timeString');
+      final timeOfDay = TimeOfDay.fromDateTime(dateTime);
+      return timeOfDay.format(context); // e.g., 6:00 PM
+    } catch (e) {
+      return timeData.toString();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     String? selectedSlot = selectedReservation?['slot_code'];
@@ -100,7 +118,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
                   Column(
                     children: [
                       Text("Date: ${selectedReservation!['date']}"),
-                      Text("Time: ${selectedReservation!['time']}"),
+                      Text("Time: ${_formatTime(selectedReservation!['time'])}"),
                       Text("Duration: ${selectedReservation!['duration']} hour(s)"),
                       const SizedBox(height: 10),
                     ],
