@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutterproject/screens/parking_map_screen.dart';
 
 class ReserveScreen extends StatefulWidget {
@@ -12,11 +13,17 @@ class _ReserveScreenState extends State<ReserveScreen> {
   String? selectedSlot;
   String duration = "1 hour";
 
-  final List<String> availableSlots = ["FCI-P1", "FCI-P2", "Library-1", "MainHall-2"];
+  final List<String> availableSlots = [
+    "A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10"
+  ];
   final List<String> durations = ["1 hour", "2 hours", "3 hours"];
 
-  void confirmReservation() {
+  void confirmReservation() async {
     if (selectedSlot == null) return;
+
+    // Save the reserved slot locally
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('reservedSlot', selectedSlot!);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("Reserved $selectedSlot for $duration")),
@@ -47,12 +54,13 @@ class _ReserveScreenState extends State<ReserveScreen> {
             ),
             DropdownButtonFormField(
               value: duration,
+              decoration: InputDecoration(labelText: "Select Duration"),
               items: durations.map((d) {
                 return DropdownMenuItem(value: d, child: Text(d));
               }).toList(),
               onChanged: (value) => setState(() => duration = value!),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: selectedSlot != null ? confirmReservation : null,
               child: Text("Confirm Reservation"),

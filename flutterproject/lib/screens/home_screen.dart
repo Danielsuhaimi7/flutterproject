@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'parking_map_screen.dart'; // ← Make sure you create this screen
+import 'package:shared_preferences/shared_preferences.dart';
+import 'parking_map_screen.dart';
 import 'report_screen.dart';
 import 'history_screen.dart';
 import 'ai_prediction_screen.dart';
@@ -19,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   GoogleMapController? _mapController;
 
   final CameraPosition _initialPosition = const CameraPosition(
-    target: LatLng(2.9264, 101.6424), // MMU Cyberjaya
+    target: LatLng(2.9264, 101.6424),
     zoom: 17,
   );
 
@@ -33,7 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const ParkingMapScreen(reservedSlot: 'A1'), // fallback slot
+              builder: (context) => const ParkingMapScreen(reservedSlot: 'A1'), // Only fallback
             ),
           );
         },
@@ -41,12 +42,28 @@ class _HomeScreenState extends State<HomeScreen> {
     };
   }
 
-  void _onNavTap(int index) {
+  void _onNavTap(int index) async {
     setState(() {
       _currentIndex = index;
     });
 
-    if (index == 2) {
+    if (index == 1) {
+      final prefs = await SharedPreferences.getInstance();
+      final reservedSlot = prefs.getString('reservedSlot');
+
+      if (reservedSlot != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ParkingMapScreen(reservedSlot: reservedSlot),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("No reserved slot found. Please reserve one first.")),
+        );
+      }
+    } else if (index == 2) {
       Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportScreen()));
     } else if (index == 3) {
       Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
@@ -100,8 +117,6 @@ class _HomeScreenState extends State<HomeScreen> {
               zoomControlsEnabled: false,
             ),
           ),
-
-          // 🛠 Top Left Profile Icon now opens ParkingMapScreen
           Positioned(
             top: 40,
             left: 16,
@@ -112,13 +127,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const ParkingMapScreen(reservedSlot: 'A1'), // fallback slot
+                        builder: (context) => const ParkingMapScreen(reservedSlot: 'A1'),
                       ),
                     );
                   },
                   child: CircleAvatar(
                     backgroundColor: Colors.black,
-                    child: const Icon(Icons.map, color: Colors.white), // Changed icon for clarity
+                    child: const Icon(Icons.map, color: Colors.white),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -138,8 +153,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-
-          // 🛠 Top Right Buttons
           Positioned(
             top: 40,
             right: 16,
@@ -163,8 +176,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-
-          // 🎯 Bottom Info Card
           Positioned(
             bottom: 100,
             left: 0,
@@ -205,8 +216,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-
-      // 🔻 Bottom Navigation Bar
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           color: Colors.black,
@@ -224,26 +233,11 @@ class _HomeScreenState extends State<HomeScreen> {
           unselectedItemColor: Colors.white54,
           type: BottomNavigationBarType.fixed,
           items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.navigation),
-              label: 'Navigation',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.report),
-              label: 'Report',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.history),
-              label: 'History',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.auto_graph),
-              label: 'AI Prediction',
-            ),
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+            BottomNavigationBarItem(icon: Icon(Icons.navigation), label: 'Navigation'),
+            BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Report'),
+            BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+            BottomNavigationBarItem(icon: Icon(Icons.auto_graph), label: 'AI Prediction'),
           ],
         ),
       ),

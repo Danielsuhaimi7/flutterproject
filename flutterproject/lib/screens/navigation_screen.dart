@@ -1,27 +1,14 @@
+// navigation_screen.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import '../services/api_service.dart';
 import 'dart:math';
 
-class ParkingMapScreen extends StatefulWidget {
-  final String reservedSlot; // Required parameter
+class NavigationScreen extends StatelessWidget {
+  final String reservedSlot;
 
-  const ParkingMapScreen({super.key, required this.reservedSlot});
+  NavigationScreen({super.key, required this.reservedSlot});
 
-  @override
-  State<ParkingMapScreen> createState() => _ParkingMapScreenState();
-}
-
-class _ParkingMapScreenState extends State<ParkingMapScreen> {
   final List<String> slots = List.generate(20, (i) => 'A${i + 1}');
   final Offset entrancePosition = Offset(160, 700);
-  List<Offset> slotPositions = [];
-
-  @override
-  void initState() {
-    super.initState();
-    slotPositions = _generateSlotPositions();
-  }
 
   List<Offset> _generateSlotPositions() {
     List<Offset> positions = [];
@@ -40,12 +27,16 @@ class _ParkingMapScreenState extends State<ParkingMapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final slotPositions = _generateSlotPositions();
     Offset? reservedOffset;
-    final index = slots.indexOf(widget.reservedSlot);
+
+    final index = slots.indexOf(reservedSlot);
     if (index != -1) reservedOffset = slotPositions[index];
 
     return Scaffold(
-      appBar: AppBar(title: Text("Navigate to ${widget.reservedSlot}")),
+      appBar: AppBar(
+        title: Text("Navigation to $reservedSlot"),
+      ),
       body: Stack(
         children: [
           if (reservedOffset != null)
@@ -53,11 +44,13 @@ class _ParkingMapScreenState extends State<ParkingMapScreen> {
               size: Size.infinite,
               painter: DottedLinePainter(entrancePosition, reservedOffset),
             ),
+
           Positioned(
             left: entrancePosition.dx,
             top: entrancePosition.dy,
             child: const Icon(Icons.directions_car, size: 36, color: Colors.black),
           ),
+
           for (int i = 0; i < slots.length; i++)
             Positioned(
               left: slotPositions[i].dx,
@@ -66,7 +59,7 @@ class _ParkingMapScreenState extends State<ParkingMapScreen> {
                 width: 40,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: slots[i] == widget.reservedSlot ? Colors.deepPurple : Colors.green,
+                  color: slots[i] == reservedSlot ? Colors.deepPurple : Colors.green,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Center(
