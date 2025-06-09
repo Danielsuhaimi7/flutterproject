@@ -8,7 +8,7 @@ class ApiService {
   // Use this if testing on real phone with local IP
   // static const String baseUrl = "http://YOUR_LAN_IP:5000";
 
-  static Future<bool> loginUser(String studentId, String password) async {
+  static Future<Map<String, dynamic>> loginUser(String studentId, String password) async {
     final response = await http.post(
       Uri.parse("$baseUrl/login"),
       headers: {"Content-Type": "application/json"},
@@ -20,12 +20,15 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data["status"] == "success";
+      return data;
     } else {
-      return false;
+      return {
+        "status": "fail",
+        "message": "Server error",
+      };
     }
   }
-
+  
   static Future<bool> registerUser(Map<String, String> userData) async {
     final response = await http.post(
       Uri.parse("$baseUrl/register"),

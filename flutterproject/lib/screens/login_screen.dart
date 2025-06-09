@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import '../services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -34,21 +35,32 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void loginUser() async {
-    final success = await ApiService.loginUser(
+    final response = await ApiService.loginUser(
       idController.text.trim(),
       passwordController.text.trim(),
     );
 
-    if (success) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => HomeScreen(username: idController.text),
-        ),
-      );
+    if (response['status'] == 'success') {
+      final role = response['role'];
+      final studentId = response['student_id'];
+
+      // Store login session if needed
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('studentId', studentId);
+      await prefs.setString('role', role);
+
+      // Navigate based on role
+      if (role == 'admin') {
+        Navigator.pushReplacementNamed(context, '/admin_dashboard');
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => HomeScreen(username: studentId)),
+        );
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Invalid ID or password")),
+        SnackBar(content: Text(response['message'] ?? "Login failed")),
       );
     }
   }
