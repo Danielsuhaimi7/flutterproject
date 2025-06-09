@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutterproject/screens/parking_map_screen.dart';
 
 class ReserveScreen extends StatefulWidget {
   const ReserveScreen({super.key});
@@ -15,10 +16,18 @@ class _ReserveScreenState extends State<ReserveScreen> {
   final List<String> durations = ["1 hour", "2 hours", "3 hours"];
 
   void confirmReservation() {
+    if (selectedSlot == null) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("Reserved $selectedSlot for $duration")),
     );
-    // API call can be added here
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ParkingMapScreen(reservedSlot: selectedSlot!),
+      ),
+    );
   }
 
   @override

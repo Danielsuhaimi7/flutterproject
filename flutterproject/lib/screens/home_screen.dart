@@ -32,7 +32,9 @@ class _HomeScreenState extends State<HomeScreen> {
         onTap: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const ParkingMapScreen()),
+            MaterialPageRoute(
+              builder: (context) => const ParkingMapScreen(reservedSlot: 'A1'), // fallback slot
+            ),
           );
         },
       ),
@@ -109,7 +111,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const ParkingMapScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const ParkingMapScreen(reservedSlot: 'A1'), // fallback slot
+                      ),
                     );
                   },
                   child: CircleAvatar(
