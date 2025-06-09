@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
+import 'navigation_screen.dart'; // Import this if NavigationScreen is in a different file
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -60,7 +61,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
             Text("Time: ${_formatTime(reservation['time'])}"),
             Text("Duration: ${reservation['duration']} hour(s)"),
             const SizedBox(height: 10),
-            const Center(child: Text("[ Map Placeholder ]", style: TextStyle(color: Colors.grey)))
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => NavigationScreen(initialReservation: reservation),
+                  ),
+                );
+              },
+              child: const Center(
+                child: Text(
+                  "[ Tap to view map ]",
+                  style: TextStyle(color: Colors.deepPurple, decoration: TextDecoration.underline),
+                ),
+              ),
+            ),
           ],
         ),
         actions: [
@@ -75,24 +91,21 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   String _formatTime(dynamic time) {
     try {
+      String timeStr;
+
+      // Convert int like 18 to '18:00'
       if (time is int) {
-        // Assume hour in 24h format with 0 minutes
-        final hour = time % 24;
-        final minute = 0;
-        final parsed = TimeOfDay(hour: hour, minute: minute);
-        final hourFormatted = parsed.hourOfPeriod == 0 ? 12 : parsed.hourOfPeriod;
-        final period = parsed.period == DayPeriod.am ? "AM" : "PM";
-        return "$hourFormatted:${parsed.minute.toString().padLeft(2, '0')} $period";
-      } else if (time is String && time.contains(":")) {
-        final parsed = TimeOfDay.fromDateTime(DateTime.parse("1970-01-01T$time"));
-        final hour = parsed.hourOfPeriod == 0 ? 12 : parsed.hourOfPeriod;
-        final period = parsed.period == DayPeriod.am ? "AM" : "PM";
-        return "$hour:${parsed.minute.toString().padLeft(2, '0')} $period";
+        timeStr = '${time.toString().padLeft(2, '0')}:00';
       } else {
-        return time.toString(); // fallback
+        timeStr = time.toString();
       }
+
+      final parsed = TimeOfDay.fromDateTime(DateTime.parse("1970-01-01T$timeStr"));
+      final hour = parsed.hourOfPeriod == 0 ? 12 : parsed.hourOfPeriod;
+      final period = parsed.period == DayPeriod.am ? "AM" : "PM";
+      return "$hour:${parsed.minute.toString().padLeft(2, '0')} $period";
     } catch (e) {
-      return time.toString(); // fallback
+      return time.toString();
     }
   }
 
@@ -136,7 +149,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   const SizedBox(height: 24),
                   const Align(
                     alignment: Alignment.centerLeft,
-                    child: Text("\ud83d\udcc4 Parking History", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    child: Text("📄 Parking History", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                   ),
                   const SizedBox(height: 12),
                   Expanded(

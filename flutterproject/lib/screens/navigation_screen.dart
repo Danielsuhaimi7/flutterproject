@@ -3,7 +3,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
 
 class NavigationScreen extends StatefulWidget {
-  const NavigationScreen({super.key});
+  final Map<String, dynamic>? initialReservation;
+
+  const NavigationScreen({super.key, this.initialReservation});
 
   @override
   State<NavigationScreen> createState() => _NavigationScreenState();
@@ -17,12 +19,18 @@ class _NavigationScreenState extends State<NavigationScreen> {
   Map<String, dynamic>? selectedReservation;
   late List<Offset> slotPositions;
 
-  @override
-  void initState() {
-    super.initState();
-    slotPositions = _generateSlotPositions();
+@override
+void initState() {
+  super.initState();
+  slotPositions = _generateSlotPositions();
+
+  if (widget.initialReservation != null) {
+    selectedReservation = widget.initialReservation;
+    userReservations = [widget.initialReservation!]; // Only show the tapped one
+  } else {
     _fetchReservations();
   }
+}
 
   Future<void> _fetchReservations() async {
     final prefs = await SharedPreferences.getInstance();
