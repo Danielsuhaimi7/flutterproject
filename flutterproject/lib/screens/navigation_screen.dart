@@ -12,8 +12,9 @@ class NavigationScreen extends StatefulWidget {
 class _NavigationScreenState extends State<NavigationScreen> {
   final List<String> slots = List.generate(20, (i) => 'A${i + 1}');
   final Offset entrancePosition = Offset(160, 700);
+
   List<Map<String, dynamic>> userReservations = [];
-  String? selectedSlot;
+  Map<String, dynamic>? selectedReservation;
   late List<Offset> slotPositions;
 
   @override
@@ -31,7 +32,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
       setState(() {
         userReservations = reservations;
         if (reservations.isNotEmpty) {
-          selectedSlot = reservations.last['slot_code'];
+          selectedReservation = reservations.last;
         }
       });
     }
@@ -54,9 +55,11 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    String? selectedSlot = selectedReservation?['slot_code'];
     Offset? reservedOffset;
+
     if (selectedSlot != null) {
-      final index = slots.indexOf(selectedSlot!);
+      final index = slots.indexOf(selectedSlot);
       if (index != -1 && index < slotPositions.length) {
         reservedOffset = slotPositions[index];
       }
@@ -77,15 +80,14 @@ class _NavigationScreenState extends State<NavigationScreen> {
                     itemCount: userReservations.length,
                     itemBuilder: (context, index) {
                       final reservation = userReservations[index];
-                      final slot = reservation['slot_code'];
                       return Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 6),
                         child: ChoiceChip(
-                          label: Text(slot),
-                          selected: slot == selectedSlot,
+                          label: Text(reservation['slot_code']),
+                          selected: reservation == selectedReservation,
                           onSelected: (_) {
                             setState(() {
-                              selectedSlot = slot;
+                              selectedReservation = reservation;
                             });
                           },
                         ),
@@ -93,18 +95,16 @@ class _NavigationScreenState extends State<NavigationScreen> {
                     },
                   ),
                 ),
-                const SizedBox(height: 8),
-                if (selectedSlot != null)
-                  ...userReservations
-                      .where((r) => r['slot_code'] == selectedSlot)
-                      .map((r) => Column(
-                            children: [
-                              Text("Date: ${r['date']}"),
-                              Text("Time: ${r['time']}"),
-                              Text("Duration: ${r['duration']} hour(s)"),
-                              const SizedBox(height: 10),
-                            ],
-                          ))
+                const SizedBox(height: 10),
+                if (selectedReservation != null)
+                  Column(
+                    children: [
+                      Text("Date: ${selectedReservation!['date']}"),
+                      Text("Time: ${selectedReservation!['time']}"),
+                      Text("Duration: ${selectedReservation!['duration']} hour(s)"),
+                      const SizedBox(height: 10),
+                    ],
+                  ),
               ],
             )
           else
@@ -123,8 +123,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
                 Positioned(
                   left: entrancePosition.dx,
                   top: entrancePosition.dy,
-                  child:
-                      const Icon(Icons.directions_car, size: 36, color: Colors.black),
+                  child: const Icon(Icons.directions_car, size: 36, color: Colors.black),
                 ),
                 for (int i = 0; i < slots.length; i++)
                   Positioned(
@@ -143,8 +142,9 @@ class _NavigationScreenState extends State<NavigationScreen> {
                         child: Text(
                           slots[i],
                           style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold),
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ),

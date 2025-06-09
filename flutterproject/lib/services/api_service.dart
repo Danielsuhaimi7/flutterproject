@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../models/reservation.dart';
 
 class ApiService {
   static const String baseUrl = "http://10.0.2.2:5000";
@@ -92,6 +93,22 @@ class ApiService {
       return data['slot_code'];
     }
     return null;
+  }
+
+  // ✅ New method using Reservation model
+  static Future<List<Reservation>> getUserReservations(String studentId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/user_reservations'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'student_id': studentId}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final List<dynamic> reservations = data['reservations'];
+      return reservations.map((r) => Reservation.fromJson(r)).toList();
+    }
+    return [];
   }
 
   static Future<List<Map<String, dynamic>>> getUserReservationDetails(String studentId) async {
