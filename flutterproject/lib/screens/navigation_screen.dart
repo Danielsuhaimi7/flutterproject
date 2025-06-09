@@ -1,14 +1,34 @@
 // navigation_screen.dart
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
 
-class NavigationScreen extends StatelessWidget {
-  final String reservedSlot;
+class NavigationScreen extends StatefulWidget {
+  const NavigationScreen({super.key});
 
-  NavigationScreen({super.key, required this.reservedSlot});
+  @override
+  State<NavigationScreen> createState() => _NavigationScreenState();
+}
 
+class _NavigationScreenState extends State<NavigationScreen> {
   final List<String> slots = List.generate(20, (i) => 'A${i + 1}');
   final Offset entrancePosition = Offset(160, 700);
+  String? reservedSlot;
+  List<Offset> slotPositions = [];
+
+  @override
+  void initState() {
+    super.initState();
+    slotPositions = _generateSlotPositions();
+    _loadReservedSlot();
+  }
+
+  Future<void> _loadReservedSlot() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      reservedSlot = prefs.getString('reservedSlot');
+    });
+  }
 
   List<Offset> _generateSlotPositions() {
     List<Offset> positions = [];
@@ -27,15 +47,18 @@ class NavigationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final slotPositions = _generateSlotPositions();
     Offset? reservedOffset;
 
-    final index = slots.indexOf(reservedSlot);
-    if (index != -1) reservedOffset = slotPositions[index];
+    if (reservedSlot != null) {
+      final index = slots.indexOf(reservedSlot!);
+      if (index != -1 && index < slotPositions.length) {
+        reservedOffset = slotPositions[index];
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Navigation to $reservedSlot"),
+        title: Text(reservedSlot != null ? "Navigation to $reservedSlot" : "No Reservation Found"),
       ),
       body: Stack(
         children: [
