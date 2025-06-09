@@ -1,15 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/api_service.dart';
 
-class HistoryScreen extends StatelessWidget {
+class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
 
-  final List<Map<String, String>> historyData = const [
-    {'date': '21/12/2024', 'status': 'Paid'},
-    {'date': '22/12/2024', 'status': 'Paid'},
-    {'date': '28/12/2024', 'status': 'Cancel'},
-    {'date': '29/12/2024', 'status': 'Paid'},
-    {'date': '01/01/2025', 'status': 'Reserved'},
-  ];
+  @override
+  State<HistoryScreen> createState() => _HistoryScreenState();
+}
+
+class _HistoryScreenState extends State<HistoryScreen> {
+  List<Map<String, dynamic>> userReservations = [];
+  bool isLoading = true;
+  String studentId = "";
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchReservations();
+  }
+
+  Future<void> _fetchReservations() async {
+    final prefs = await SharedPreferences.getInstance();
+    studentId = prefs.getString('studentId') ?? "";
+
+    if (studentId.isNotEmpty) {
+      final reservations = await ApiService.getUserReservationDetails(studentId);
+      setState(() {
+        userReservations = reservations;
+        isLoading = false;
+      });
+    }
+  }
 
   Color _getStatusColor(String status) {
     switch (status) {
@@ -24,6 +46,56 @@ class HistoryScreen extends StatelessWidget {
     }
   }
 
+  void _showReservationDetails(BuildContext context, Map<String, dynamic> reservation) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Reservation Details"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Slot: ${reservation['slot_code']}", style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text("Date: ${reservation['date']}"),
+            Text("Time: ${_formatTime(reservation['time'])}"),
+            Text("Duration: ${reservation['duration']} hour(s)"),
+            const SizedBox(height: 10),
+            const Center(child: Text("[ Map Placeholder ]", style: TextStyle(color: Colors.grey)))
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Close"),
+          )
+        ],
+      ),
+    );
+  }
+
+  String _formatTime(dynamic time) {
+    try {
+      if (time is int) {
+        // Assume hour in 24h format with 0 minutes
+        final hour = time % 24;
+        final minute = 0;
+        final parsed = TimeOfDay(hour: hour, minute: minute);
+        final hourFormatted = parsed.hourOfPeriod == 0 ? 12 : parsed.hourOfPeriod;
+        final period = parsed.period == DayPeriod.am ? "AM" : "PM";
+        return "$hourFormatted:${parsed.minute.toString().padLeft(2, '0')} $period";
+      } else if (time is String && time.contains(":")) {
+        final parsed = TimeOfDay.fromDateTime(DateTime.parse("1970-01-01T$time"));
+        final hour = parsed.hourOfPeriod == 0 ? 12 : parsed.hourOfPeriod;
+        final period = parsed.period == DayPeriod.am ? "AM" : "PM";
+        return "$hour:${parsed.minute.toString().padLeft(2, '0')} $period";
+      } else {
+        return time.toString(); // fallback
+      }
+    } catch (e) {
+      return time.toString(); // fallback
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -31,84 +103,82 @@ class HistoryScreen extends StatelessWidget {
         title: const Text("Parking History", style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: BackButton(color: Colors.black),
+        leading: const BackButton(color: Colors.black),
       ),
       backgroundColor: Colors.grey[100],
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Profile header
-            Container(
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
               padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                children: const [
-                  CircleAvatar(radius: 24, backgroundColor: Colors.grey),
-                  SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Daniel Suhaimi", style: TextStyle(fontWeight: FontWeight.bold)),
-                      SizedBox(height: 4),
-                      Text("1201102370", style: TextStyle(color: Colors.grey)),
-                    ],
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const CircleAvatar(radius: 24, backgroundColor: Colors.grey),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text("Daniel Suhaimi", style: TextStyle(fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 4),
+                            Text(studentId, style: const TextStyle(color: Colors.grey)),
+                          ],
+                        )
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text("\ud83d\udcc4 Parking History", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: userReservations.length,
+                      itemBuilder: (context, index) {
+                        final res = userReservations[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          child: ListTile(
+                            leading: const Icon(Icons.calendar_today),
+                            title: Text(res['date'] ?? ''),
+                            subtitle: Text("Time: ${_formatTime(res['time'])}"),
+                            trailing: Text(
+                              "Reserved",
+                              style: TextStyle(
+                                color: _getStatusColor("Reserved"),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            onTap: () => _showReservationDetails(context, res),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple.shade700,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text("Back to Homepage", style: TextStyle(fontSize: 16)),
+                    ),
                   )
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text("📄 Parking History", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-            ),
-            const SizedBox(height: 12),
-
-            // List of history
-            Expanded(
-              child: ListView.builder(
-                itemCount: historyData.length,
-                itemBuilder: (context, index) {
-                  final item = historyData[index];
-                  return Card(
-                    margin: const EdgeInsets.symmetric(vertical: 6),
-                    child: ListTile(
-                      leading: const Icon(Icons.calendar_today),
-                      title: Text(item['date']!),
-                      trailing: Text(
-                        item['status']!,
-                        style: TextStyle(
-                          color: _getStatusColor(item['status']!),
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            // Back button
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.deepPurple.shade700,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text("Back to Homepage", style: TextStyle(fontSize: 16)),
-              ),
-            )
-          ],
-        ),
-      ),
     );
   }
 }
