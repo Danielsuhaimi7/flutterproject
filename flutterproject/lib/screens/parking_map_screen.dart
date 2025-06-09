@@ -32,6 +32,7 @@ class _ParkingMapScreenState extends State<ParkingMapScreen> {
   void initState() {
     super.initState();
     selectedSlot = widget.slotToNavigate;
+    slotPositions = _generateSlotPositions();
     _loadTakenSlots();
   }
 
@@ -113,8 +114,10 @@ class _ParkingMapScreenState extends State<ParkingMapScreen> {
     Offset? reservedOffset;
     if (selectedSlot != null) {
       final index = slots.indexOf(selectedSlot!);
-      if (index != -1) {
+      if (index != -1 && index < slotPositions.length) {
         reservedOffset = slotPositions[index];
+      } else {
+        reservedOffset = null;
       }
     }
 
