@@ -89,8 +89,22 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data['slot_code']; // Make sure your backend returns this
+      return data['slot_code'];
     }
     return null;
+  }
+
+  static Future<List<Map<String, dynamic>>> getUserReservationDetails(String studentId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/user_reservation_details'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'student_id': studentId}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(data['reservations']);
+    }
+    return [];
   }
 }

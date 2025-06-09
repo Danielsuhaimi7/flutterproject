@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'parking_map_screen.dart';
 import 'report_screen.dart';
 import 'history_screen.dart';
 import 'ai_prediction_screen.dart';
+import 'navigation_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String username;
@@ -36,7 +38,8 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ParkingMapScreen(slotToNavigate: reservedSlot),
+              builder: (context) =>
+                  ParkingMapScreen(slotToNavigate: reservedSlot),
             ),
           );
         },
@@ -50,39 +53,33 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     if (index == 1) {
-      final prefs = await SharedPreferences.getInstance();
-      final reservedSlot = prefs.getString('reservedSlot');
-
-      if (reservedSlot != null) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ParkingMapScreen(slotToNavigate: reservedSlot),
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("No reserved slot found. Please reserve one first.")),
-        );
-      }
+      // 🔄 Fixed to navigate to NavigationScreen
+      Navigator.pushNamed(context, '/navigation');
     } else if (index == 2) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportScreen()));
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const ReportScreen()),
+      );
     } else if (index == 3) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const HistoryScreen()),
+      );
     } else if (index == 4) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const AIPredictionScreen()));
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const AIPredictionScreen()),
+      );
     }
   }
 
   void _goToFciParking() {
-    if (_mapController != null) {
-      _mapController!.animateCamera(
-        CameraUpdate.newLatLngZoom(
-          const LatLng(2.9280382, 101.6409516),
-          18,
-        ),
-      );
-    }
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLngZoom(
+        const LatLng(2.9280382, 101.6409516),
+        18,
+      ),
+    );
   }
 
   void _goToCurrentLocation() async {
@@ -131,7 +128,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => ParkingMapScreen(slotToNavigate: reservedSlot),
+                        builder: (context) =>
+                            ParkingMapScreen(slotToNavigate: reservedSlot),
                       ),
                     );
                   },
@@ -146,11 +144,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     const Text(
                       "Welcome!",
-                      style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(
+                          color: Colors.black,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16),
                     ),
                     Text(
                       widget.username,
-                      style: const TextStyle(color: Colors.black, fontSize: 14),
+                      style: const TextStyle(
+                          color: Colors.black, fontSize: 14),
                     ),
                   ],
                 ),
@@ -198,9 +200,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       Icon(Icons.person, color: Colors.white),
                       SizedBox(width: 10),
                       Expanded(
-                        child: Text("Daniel Danish bin Suhaimi", style: TextStyle(color: Colors.white)),
+                        child: Text("Daniel Danish bin Suhaimi",
+                            style: TextStyle(color: Colors.white)),
                       ),
-                      Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white),
+                      Icon(Icons.arrow_forward_ios,
+                          size: 16, color: Colors.white),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -209,9 +213,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       Icon(Icons.smart_display, color: Colors.white),
                       SizedBox(width: 10),
                       Expanded(
-                        child: Text("Smart Campus Parking System", style: TextStyle(color: Colors.white)),
+                        child: Text("Smart Campus Parking System",
+                            style: TextStyle(color: Colors.white)),
                       ),
-                      Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white),
+                      Icon(Icons.arrow_forward_ios,
+                          size: 16, color: Colors.white),
                     ],
                   ),
                 ],
@@ -238,10 +244,12 @@ class _HomeScreenState extends State<HomeScreen> {
           type: BottomNavigationBarType.fixed,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.navigation), label: 'Navigation'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.navigation), label: 'Navigation'),
             BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Report'),
             BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-            BottomNavigationBarItem(icon: Icon(Icons.auto_graph), label: 'AI Prediction'),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.auto_graph), label: 'AI Prediction'),
           ],
         ),
       ),

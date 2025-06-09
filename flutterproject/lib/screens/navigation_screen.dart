@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:math';
 import '../services/api_service.dart';
 
 class NavigationScreen extends StatefulWidget {
@@ -13,24 +12,27 @@ class NavigationScreen extends StatefulWidget {
 class _NavigationScreenState extends State<NavigationScreen> {
   final List<String> slots = List.generate(20, (i) => 'A${i + 1}');
   final Offset entrancePosition = Offset(160, 700);
-  String? reservedSlot;
+  List<Map<String, dynamic>> userReservations = [];
+  String? selectedSlot;
   late List<Offset> slotPositions;
 
   @override
   void initState() {
     super.initState();
     slotPositions = _generateSlotPositions();
-    _loadReservation();
+    _fetchReservations();
   }
 
-  void _loadReservation() async {
+  Future<void> _fetchReservations() async {
     final prefs = await SharedPreferences.getInstance();
     final studentId = prefs.getString('studentId');
-
     if (studentId != null) {
-      final slot = await ApiService.getUserReservation(studentId);
+      final reservations = await ApiService.getUserReservationDetails(studentId);
       setState(() {
-        reservedSlot = slot;
+        userReservations = reservations;
+        if (reservations.isNotEmpty) {
+          selectedSlot = reservations.last['slot_code'];
+        }
       });
     }
   }
@@ -53,55 +55,103 @@ class _NavigationScreenState extends State<NavigationScreen> {
   @override
   Widget build(BuildContext context) {
     Offset? reservedOffset;
-
-    if (reservedSlot != null) {
-      final index = slots.indexOf(reservedSlot!);
+    if (selectedSlot != null) {
+      final index = slots.indexOf(selectedSlot!);
       if (index != -1 && index < slotPositions.length) {
         reservedOffset = slotPositions[index];
       }
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(reservedSlot != null
-            ? "Navigation to $reservedSlot"
-            : "No Reservation Found"),
-      ),
-      body: Stack(
+      appBar: AppBar(title: const Text("My Reservations")),
+      body: Column(
         children: [
-          if (reservedOffset != null)
-            CustomPaint(
-              size: Size.infinite,
-              painter: DottedLinePainter(entrancePosition, reservedOffset),
-            ),
-          Positioned(
-            left: entrancePosition.dx,
-            top: entrancePosition.dy,
-            child: const Icon(Icons.directions_car,
-                size: 36, color: Colors.black),
-          ),
-          for (int i = 0; i < slots.length; i++)
-            Positioned(
-              left: slotPositions[i].dx,
-              top: slotPositions[i].dy,
-              child: Container(
-                width: 40,
-                height: 60,
-                decoration: BoxDecoration(
-                  color: slots[i] == reservedSlot
-                      ? Colors.deepPurple
-                      : Colors.green,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: Text(
-                    slots[i],
-                    style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold),
+          if (userReservations.isNotEmpty)
+            Column(
+              children: [
+                SizedBox(
+                  height: 60,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    itemCount: userReservations.length,
+                    itemBuilder: (context, index) {
+                      final reservation = userReservations[index];
+                      final slot = reservation['slot_code'];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: ChoiceChip(
+                          label: Text(slot),
+                          selected: slot == selectedSlot,
+                          onSelected: (_) {
+                            setState(() {
+                              selectedSlot = slot;
+                            });
+                          },
+                        ),
+                      );
+                    },
                   ),
                 ),
-              ),
+                const SizedBox(height: 8),
+                if (selectedSlot != null)
+                  ...userReservations
+                      .where((r) => r['slot_code'] == selectedSlot)
+                      .map((r) => Column(
+                            children: [
+                              Text("Date: ${r['date']}"),
+                              Text("Time: ${r['time']}"),
+                              Text("Duration: ${r['duration']} hour(s)"),
+                              const SizedBox(height: 10),
+                            ],
+                          ))
+              ],
+            )
+          else
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Text("No reservations found."),
             ),
+          Expanded(
+            child: Stack(
+              children: [
+                if (reservedOffset != null)
+                  CustomPaint(
+                    size: Size.infinite,
+                    painter: DottedLinePainter(entrancePosition, reservedOffset),
+                  ),
+                Positioned(
+                  left: entrancePosition.dx,
+                  top: entrancePosition.dy,
+                  child:
+                      const Icon(Icons.directions_car, size: 36, color: Colors.black),
+                ),
+                for (int i = 0; i < slots.length; i++)
+                  Positioned(
+                    left: slotPositions[i].dx,
+                    top: slotPositions[i].dy,
+                    child: Container(
+                      width: 40,
+                      height: 60,
+                      decoration: BoxDecoration(
+                        color: slots[i] == selectedSlot
+                            ? Colors.deepPurple
+                            : Colors.green,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Center(
+                        child: Text(
+                          slots[i],
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ],
       ),
     );
