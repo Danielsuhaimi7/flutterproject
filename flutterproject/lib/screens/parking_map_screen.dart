@@ -83,11 +83,21 @@ class _ParkingMapScreenState extends State<ParkingMapScreen> {
   }
 
   void _reserveSlot() async {
+    final prefs = await SharedPreferences.getInstance();
+    final studentId = prefs.getString('studentId');
+
+    if (studentId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("User not logged in")),
+      );
+      return;
+    }
+
     final dateStr = DateFormat('yyyy-MM-dd').format(selectedDate);
     final timeStr = _convertTimeTo24Hour(selectedTime);
 
     final success = await ApiService.reserveSlot(
-      studentId: '1201102370',
+      studentId: studentId,
       slotCode: selectedSlot!,
       date: dateStr,
       time: timeStr,
@@ -95,9 +105,6 @@ class _ParkingMapScreenState extends State<ParkingMapScreen> {
     );
 
     if (success) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('reservedSlot', selectedSlot!);
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Reservation successful!")),
       );

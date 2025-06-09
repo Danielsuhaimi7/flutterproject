@@ -1,7 +1,7 @@
-// navigation_screen.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
+import '../services/api_service.dart';
 
 class NavigationScreen extends StatefulWidget {
   const NavigationScreen({super.key});
@@ -14,20 +14,25 @@ class _NavigationScreenState extends State<NavigationScreen> {
   final List<String> slots = List.generate(20, (i) => 'A${i + 1}');
   final Offset entrancePosition = Offset(160, 700);
   String? reservedSlot;
-  List<Offset> slotPositions = [];
+  late List<Offset> slotPositions;
 
   @override
   void initState() {
     super.initState();
     slotPositions = _generateSlotPositions();
-    _loadReservedSlot();
+    _loadReservation();
   }
 
-  Future<void> _loadReservedSlot() async {
+  void _loadReservation() async {
     final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      reservedSlot = prefs.getString('reservedSlot');
-    });
+    final studentId = prefs.getString('studentId');
+
+    if (studentId != null) {
+      final slot = await ApiService.getUserReservation(studentId);
+      setState(() {
+        reservedSlot = slot;
+      });
+    }
   }
 
   List<Offset> _generateSlotPositions() {
@@ -58,7 +63,9 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(reservedSlot != null ? "Navigation to $reservedSlot" : "No Reservation Found"),
+        title: Text(reservedSlot != null
+            ? "Navigation to $reservedSlot"
+            : "No Reservation Found"),
       ),
       body: Stack(
         children: [
@@ -67,13 +74,12 @@ class _NavigationScreenState extends State<NavigationScreen> {
               size: Size.infinite,
               painter: DottedLinePainter(entrancePosition, reservedOffset),
             ),
-
           Positioned(
             left: entrancePosition.dx,
             top: entrancePosition.dy,
-            child: const Icon(Icons.directions_car, size: 36, color: Colors.black),
+            child: const Icon(Icons.directions_car,
+                size: 36, color: Colors.black),
           ),
-
           for (int i = 0; i < slots.length; i++)
             Positioned(
               left: slotPositions[i].dx,
@@ -82,13 +88,16 @@ class _NavigationScreenState extends State<NavigationScreen> {
                 width: 40,
                 height: 60,
                 decoration: BoxDecoration(
-                  color: slots[i] == reservedSlot ? Colors.deepPurple : Colors.green,
+                  color: slots[i] == reservedSlot
+                      ? Colors.deepPurple
+                      : Colors.green,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Center(
                   child: Text(
                     slots[i],
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
