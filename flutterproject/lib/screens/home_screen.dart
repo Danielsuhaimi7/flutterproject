@@ -30,11 +30,13 @@ class _HomeScreenState extends State<HomeScreen> {
         markerId: const MarkerId('fci_parking'),
         position: const LatLng(2.9280382, 101.6409516),
         infoWindow: const InfoWindow(title: 'MMU FCI Parking Area'),
-        onTap: () {
+        onTap: () async {
+          final prefs = await SharedPreferences.getInstance();
+          final reservedSlot = prefs.getString('reservedSlot') ?? 'A1';
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const ParkingMapScreen(reservedSlot: 'A1'), // Only fallback
+              builder: (context) => ParkingMapScreen(slotToNavigate: reservedSlot),
             ),
           );
         },
@@ -55,7 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ParkingMapScreen(reservedSlot: reservedSlot),
+            builder: (context) => ParkingMapScreen(slotToNavigate: reservedSlot),
           ),
         );
       } else {
@@ -123,11 +125,13 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Row(
               children: [
                 GestureDetector(
-                  onTap: () {
+                  onTap: () async {
+                    final prefs = await SharedPreferences.getInstance();
+                    final reservedSlot = prefs.getString('reservedSlot') ?? 'A1';
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const ParkingMapScreen(reservedSlot: 'A1'),
+                        builder: (context) => ParkingMapScreen(slotToNavigate: reservedSlot),
                       ),
                     );
                   },

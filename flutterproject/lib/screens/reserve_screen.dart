@@ -32,7 +32,7 @@ class _ReserveScreenState extends State<ReserveScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ParkingMapScreen(reservedSlot: selectedSlot!),
+        builder: (context) => ParkingMapScreen(slotToNavigate: selectedSlot!),
       ),
     );
   }
