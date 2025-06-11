@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 
@@ -19,13 +20,19 @@ class ParkingLayoutEditorScreen extends StatefulWidget {
 
 class _ParkingLayoutEditorScreenState extends State<ParkingLayoutEditorScreen> {
   late List<List<bool>> grid;
-  int rows = 5;
-  int cols = 5;
+  late int rows;
+  late int cols;
 
   @override
   void initState() {
     super.initState();
+
     assert(widget.totalSlots > 0, "totalSlots must be > 0");
+    final side = sqrt(widget.totalSlots.toDouble()).ceil();
+    rows = side;
+    cols = side;
+
+    grid = List.generate(rows, (_) => List.generate(cols, (_) => false));
   }
 
   @override
@@ -63,12 +70,20 @@ class _ParkingLayoutEditorScreenState extends State<ParkingLayoutEditorScreen> {
               label: const Text("Save Layout"),
               onPressed: () async {
                 final layoutData = <Map<String, dynamic>>[];
+
                 for (int r = 0; r < rows; r++) {
                   for (int c = 0; c < cols; c++) {
                     if (grid[r][c]) {
                       layoutData.add({"row": r, "col": c});
                     }
                   }
+                }
+
+                if (layoutData.length > widget.totalSlots) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text("You selected more than the allowed number of slots.")),
+                  );
+                  return;
                 }
 
                 final success = await ApiService.saveParkingLayout(

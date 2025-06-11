@@ -36,7 +36,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _isCreatingParking = false;
   LatLng? _newParkingLocation;
-  List<LatLng> _publicParkings = [];
 
   @override
   void initState() {
@@ -46,9 +45,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadAllParkingLocations() async {
     final data = await ApiService.getParkingLocations();
-      setState(() {
-        _fetchedParkings = List<Map<String, dynamic>>.from(data);
-      });
+    setState(() {
+      _fetchedParkings = List<Map<String, dynamic>>.from(data);
+    });
   }
 
   Set<Marker> _buildMarkers(BuildContext context) {
@@ -135,9 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
               final success = await ApiService.addParkingLocation(
                 position.latitude,
                 position.longitude,
-                name: nameController.text.trim().isEmpty
-                    ? "Unnamed"
-                    : nameController.text.trim(),
+                name: nameController.text.trim().isEmpty ? "Unnamed" : nameController.text.trim(),
               );
 
               if (success) {
@@ -175,8 +172,10 @@ class _HomeScreenState extends State<HomeScreen> {
             child: const Text("Cancel"),
           ),
           TextButton(
-            onPressed: () async {
-              final int? slotCount = int.tryParse(slotController.text.trim());
+            onPressed: () {
+              final String text = slotController.text.trim();
+              final int? slotCount = int.tryParse(text);
+
               if (slotCount == null || slotCount <= 0) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Invalid slot count")),
@@ -186,7 +185,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
               Navigator.of(ctx).pop();
 
-              // ✅ Navigate to layout editor instead of saving immediately
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -205,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _onNavTap(int index) async {
+  void _onNavTap(int index) {
     setState(() {
       _currentIndex = index;
     });
@@ -213,11 +211,11 @@ class _HomeScreenState extends State<HomeScreen> {
     if (index == 1) {
       Navigator.pushNamed(context, '/navigation');
     } else if (index == 2) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportScreen()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportScreen()));
     } else if (index == 3) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
     } else if (index == 4) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const AIPredictionScreen()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const AIPredictionScreen()));
     }
   }
 
@@ -229,16 +227,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _goToCurrentLocation() async {
     if (_mapController != null) {
-      var location = await _mapController!.getVisibleRegion();
-      _mapController!.animateCamera(
-        CameraUpdate.newLatLngZoom(
-          LatLng(
-            (location.northeast.latitude + location.southwest.latitude) / 2,
-            (location.northeast.longitude + location.southwest.longitude) / 2,
-          ),
-          17,
-        ),
+      final bounds = await _mapController!.getVisibleRegion();
+      final center = LatLng(
+        (bounds.northeast.latitude + bounds.southwest.latitude) / 2,
+        (bounds.northeast.longitude + bounds.southwest.longitude) / 2,
       );
+      _mapController!.animateCamera(CameraUpdate.newLatLngZoom(center, 17));
     }
   }
 
@@ -262,61 +256,6 @@ class _HomeScreenState extends State<HomeScreen> {
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
               onTap: _isCreatingParking ? _onMapTapForParking : null,
-            ),
-          ),
-          Positioned(
-            top: 40,
-            left: 16,
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () async {
-                    final prefs = await SharedPreferences.getInstance();
-                    final reservedSlot = prefs.getString('reservedSlot') ?? 'A1';
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => ParkingMapScreen(slotToNavigate: reservedSlot),
-                      ),
-                    );
-                  },
-                  child: CircleAvatar(
-                    backgroundColor: Colors.black,
-                    child: const Icon(Icons.map, color: Colors.white),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("Welcome!", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
-                    Text(widget.username, style: const TextStyle(color: Colors.black, fontSize: 14)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            top: 40,
-            right: 16,
-            child: Column(
-              children: [
-                const Icon(Icons.notifications_none_rounded, size: 28),
-                const SizedBox(height: 8),
-                FloatingActionButton.small(
-                  heroTag: "btn1",
-                  backgroundColor: Colors.blue,
-                  onPressed: _goToFciParking,
-                  child: const Icon(Icons.local_parking, color: Colors.white),
-                ),
-                const SizedBox(height: 8),
-                FloatingActionButton.small(
-                  heroTag: "btn2",
-                  backgroundColor: Colors.green,
-                  onPressed: _goToCurrentLocation,
-                  child: const Icon(Icons.my_location, color: Colors.white),
-                ),
-              ],
             ),
           ),
           if (isAdmin)
@@ -347,53 +286,26 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       },
                     ),
-                    const SizedBox(height: 12),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.add),
-                      label: const Text("Manage Parking Slots"),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.deepPurple),
-                      onPressed: () {
-                        // TODO: Navigate to admin parking management screen
-                      },
-                    ),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.report),
-                      label: const Text("View Reports"),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.deepPurple),
-                      onPressed: () {
-                        // TODO: Navigate to admin report viewer
-                      },
-                    ),
                   ],
                 ),
               ),
             ),
         ],
       ),
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20),
-            topRight: Radius.circular(20),
-          ),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: _onNavTap,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white54,
-          type: BottomNavigationBarType.fixed,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.navigation), label: 'Navigation'),
-            BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Report'),
-            BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-            BottomNavigationBarItem(icon: Icon(Icons.auto_graph), label: 'AI Prediction'),
-          ],
-        ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: _onNavTap,
+        backgroundColor: Colors.black,
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.white54,
+        type: BottomNavigationBarType.fixed,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.navigation), label: 'Navigation'),
+          BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Report'),
+          BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+          BottomNavigationBarItem(icon: Icon(Icons.auto_graph), label: 'AI Prediction'),
+        ],
       ),
     );
   }
