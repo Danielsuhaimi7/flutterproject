@@ -10,92 +10,123 @@ class AIPredictionScreen extends StatefulWidget {
 }
 
 class _AIPredictionScreenState extends State<AIPredictionScreen> {
-  String result = "Press button to predict";
-  bool isLoading = false;
+  Map<int, Map<int, double>> availability = {}; // day -> hour -> probability
+  bool isLoading = true;
 
-  Future<void> getPrediction() async {
-    setState(() {
-      isLoading = true;
-      result = "Predicting...";
-    });
+  final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  final hours = List.generate(11, (i) => i + 8); // 8 AM to 6 PM
 
-    final url = Uri.parse('http://10.0.2.2:5000/predict_slot'); // Use local IP for real phone
+  @override
+  void initState() {
+    super.initState();
+    fetchWeeklyAvailability();
+  }
 
+  Future<void> fetchWeeklyAvailability() async {
+    setState(() => isLoading = true);
     try {
-      final response = await http.post(
-        url,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          "user_id": 1201102370,  // Replace this with dynamic user ID if needed
-          "hour": DateTime.now().hour,
-          "weekday": DateTime.now().weekday,
-        }),
-      );
-
+      final response = await http.get(Uri.parse('http://10.0.2.2:5000/weekly_availability'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
-          result = "Recommended Slot: ${data['recommended_slot']}";
+          availability = Map.fromIterable(
+            List.generate(7, (i) => i + 1),
+            value: (day) => Map<int, double>.from(
+              Map.from(data['availability'][day.toString()] ?? {}),
+            ),
+          );
         });
       } else {
-        setState(() {
-          result = "Error: ${response.statusCode} - ${response.reasonPhrase}";
-        });
+        print("Error: ${response.statusCode}");
       }
     } catch (e) {
-      setState(() {
-        result = "Exception: $e";
-      });
+      print("Exception: $e");
     } finally {
-      setState(() {
-        isLoading = false;
-      });
+      setState(() => isLoading = false);
     }
+  }
+
+  Color getColorForAvailability(double value) {
+    if (value > 0.8) return Colors.green;
+    if (value > 0.5) return Colors.yellow;
+    if (value > 0.2) return Colors.orange;
+    return Colors.red;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI Prediction'),
+        title: const Text('AI Parking Availability'),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
       ),
-      backgroundColor: Colors.purple.shade50,
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              result,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: isLoading ? null : getPrediction,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepPurple,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                    )
-                  : const Text(
-                      "Get AI Recommendation",
-                      style: TextStyle(fontWeight: FontWeight.bold),
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                children: [
+                  const Text(
+                    'Parking Availability Heatmap (This Week)',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              const SizedBox(width: 40),
+                              ...days.map((d) => Container(
+                                    width: 50,
+                                    alignment: Alignment.center,
+                                    child: Text(d, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  )),
+                            ],
+                          ),
+                          ...hours.map((hour) => Row(
+                                children: [
+                                  SizedBox(
+                                    width: 40,
+                                    child: Text('${hour}h', style: const TextStyle(fontSize: 12)),
+                                  ),
+                                  ...List.generate(7, (dayIndex) {
+                                    final day = dayIndex + 1;
+                                    final prob = availability[day]?[hour] ?? 1.0;
+                                    return Container(
+                                      width: 50,
+                                      height: 30,
+                                      margin: const EdgeInsets.all(1),
+                                      color: getColorForAvailability(prob),
+                                      child: Center(
+                                        child: Text(
+                                          '${(prob * 100).round()}%',
+                                          style: const TextStyle(fontSize: 10, color: Colors.black),
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                ],
+                              )),
+                        ],
+                      ),
                     ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: fetchWeeklyAvailability,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text("Refresh Data"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-      ),
     );
   }
 }
