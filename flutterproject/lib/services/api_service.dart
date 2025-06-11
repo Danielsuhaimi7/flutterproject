@@ -95,7 +95,6 @@ class ApiService {
     return null;
   }
 
-  // ✅ New method using Reservation model
   static Future<List<Reservation>> getUserReservations(String studentId) async {
     final response = await http.post(
       Uri.parse('$baseUrl/user_reservations'),
@@ -121,6 +120,32 @@ class ApiService {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return List<Map<String, dynamic>>.from(data['reservations']);
+    }
+    return [];
+  }
+
+  // ✅ NEW: Add Parking Location (admin)
+  static Future<bool> addParkingLocation(double lat, double lng) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/add_parking'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'latitude': lat, 'longitude': lng}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['status'] == 'success';
+    }
+    return false;
+  }
+
+  // ✅ NEW: Get All Parking Locations (public view)
+  static Future<List<Map<String, dynamic>>> getParkingLocations() async {
+    final response = await http.get(Uri.parse('$baseUrl/get_parking_locations'));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(data['locations']);
     }
     return [];
   }

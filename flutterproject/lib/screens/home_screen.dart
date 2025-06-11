@@ -7,6 +7,7 @@ import 'report_screen.dart';
 import 'history_screen.dart';
 import 'ai_prediction_screen.dart';
 import 'navigation_screen.dart';
+import '../services/api_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final String username;
@@ -31,8 +32,12 @@ class _HomeScreenState extends State<HomeScreen> {
     zoom: 17,
   );
 
+  bool _isCreatingParking = false;
+  LatLng? _newParkingLocation;
+  List<LatLng> _publicParkings = []; // 👈 All saved parkings from backend
+
   Set<Marker> _buildMarkers(BuildContext context) {
-    return {
+    final markers = <Marker>{
       Marker(
         markerId: const MarkerId('fci_parking'),
         position: const LatLng(2.9280382, 101.6409516),
@@ -43,13 +48,56 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) =>
-                  ParkingMapScreen(slotToNavigate: reservedSlot),
+              builder: (context) => ParkingMapScreen(slotToNavigate: reservedSlot),
             ),
           );
         },
       ),
     };
+
+    if (_newParkingLocation != null) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId('new_parking'),
+          position: _newParkingLocation!,
+          infoWindow: const InfoWindow(title: 'New Parking (Temp)'),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+        ),
+      );
+    }
+
+    return markers;
+  }
+
+  void _onMapTapForParking(LatLng position) async {
+    setState(() {
+      _newParkingLocation = position;
+      _isCreatingParking = false;
+    });
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Create Parking Here?"),
+        content: Text("Latitude: ${position.latitude}\nLongitude: ${position.longitude}"),
+        actions: [
+          TextButton(
+            child: const Text("Cancel"),
+            onPressed: () => Navigator.of(ctx).pop(),
+          ),
+          TextButton(
+            child: const Text("Confirm"),
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Parking created (simulated)")),
+              );
+              // TODO: Send to backend later
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   void _onNavTap(int index) async {
@@ -60,29 +108,17 @@ class _HomeScreenState extends State<HomeScreen> {
     if (index == 1) {
       Navigator.pushNamed(context, '/navigation');
     } else if (index == 2) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const ReportScreen()),
-      );
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportScreen()));
     } else if (index == 3) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const HistoryScreen()),
-      );
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
     } else if (index == 4) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const AIPredictionScreen()),
-      );
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const AIPredictionScreen()));
     }
   }
 
   void _goToFciParking() {
     _mapController?.animateCamera(
-      CameraUpdate.newLatLngZoom(
-        const LatLng(2.9280382, 101.6409516),
-        18,
-      ),
+      CameraUpdate.newLatLngZoom(const LatLng(2.9280382, 101.6409516), 18),
     );
   }
 
@@ -120,6 +156,7 @@ class _HomeScreenState extends State<HomeScreen> {
               myLocationEnabled: true,
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
+              onTap: _isCreatingParking ? _onMapTapForParking : null,
             ),
           ),
           Positioned(
@@ -134,8 +171,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            ParkingMapScreen(slotToNavigate: reservedSlot),
+                        builder: (context) => ParkingMapScreen(slotToNavigate: reservedSlot),
                       ),
                     );
                   },
@@ -148,18 +184,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      "Welcome!",
-                      style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16),
-                    ),
-                    Text(
-                      widget.username,
-                      style: const TextStyle(
-                          color: Colors.black, fontSize: 14),
-                    ),
+                    const Text("Welcome!", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text(widget.username, style: const TextStyle(color: Colors.black, fontSize: 14)),
                   ],
                 ),
               ],
@@ -188,8 +214,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-
-          // Admin Panel Section (only shown if role == admin)
           if (isAdmin)
             Positioned(
               bottom: 200,
@@ -203,22 +227,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: Column(
                   children: [
-                    const Text(
-                      "Admin Panel",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
+                    const Text("Admin Panel", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.add_location_alt),
+                      label: const Text("Create New Parking"),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.deepPurple),
+                      onPressed: () {
+                        setState(() {
+                          _isCreatingParking = true;
+                        });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Tap on the map to place a new parking.")),
+                        );
+                      },
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.add),
                       label: const Text("Manage Parking Slots"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.deepPurple,
-                      ),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.deepPurple),
                       onPressed: () {
                         // TODO: Navigate to admin parking management screen
                       },
@@ -226,10 +254,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ElevatedButton.icon(
                       icon: const Icon(Icons.report),
                       label: const Text("View Reports"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.deepPurple,
-                      ),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.deepPurple),
                       onPressed: () {
                         // TODO: Navigate to admin report viewer
                       },
@@ -238,7 +263,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-
           Positioned(
             bottom: 100,
             left: 0,
@@ -257,11 +281,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       Icon(Icons.person, color: Colors.white),
                       SizedBox(width: 10),
                       Expanded(
-                        child: Text("Daniel Danish bin Suhaimi",
-                            style: TextStyle(color: Colors.white)),
+                        child: Text("Daniel Danish bin Suhaimi", style: TextStyle(color: Colors.white)),
                       ),
-                      Icon(Icons.arrow_forward_ios,
-                          size: 16, color: Colors.white),
+                      Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -270,11 +292,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       Icon(Icons.smart_display, color: Colors.white),
                       SizedBox(width: 10),
                       Expanded(
-                        child: Text("Smart Campus Parking System",
-                            style: TextStyle(color: Colors.white)),
+                        child: Text("Smart Campus Parking System", style: TextStyle(color: Colors.white)),
                       ),
-                      Icon(Icons.arrow_forward_ios,
-                          size: 16, color: Colors.white),
+                      Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white),
                     ],
                   ),
                 ],
@@ -301,12 +321,10 @@ class _HomeScreenState extends State<HomeScreen> {
           type: BottomNavigationBarType.fixed,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.navigation), label: 'Navigation'),
+            BottomNavigationBarItem(icon: Icon(Icons.navigation), label: 'Navigation'),
             BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Report'),
             BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.auto_graph), label: 'AI Prediction'),
+            BottomNavigationBarItem(icon: Icon(Icons.auto_graph), label: 'AI Prediction'),
           ],
         ),
       ),
