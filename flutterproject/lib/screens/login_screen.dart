@@ -43,14 +43,13 @@ class _LoginScreenState extends State<LoginScreen> {
     if (response['status'] == 'success') {
       final role = response['role'];
       final studentId = response['student_id'];
-      final name = response['name']; // ✅ Extract the name from response
+      final name = response['name'];
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('studentId', studentId);
       await prefs.setString('role', role);
-      await prefs.setString('name', name); // ✅ Store name
+      await prefs.setString('name', name); 
 
-      // Navigate based on role
       if (role == 'admin') {
         Navigator.pushReplacementNamed(context, '/admin_dashboard');
       } else {
