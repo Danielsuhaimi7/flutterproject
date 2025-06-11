@@ -26,7 +26,7 @@ void initState() {
 
   if (widget.initialReservation != null) {
     selectedReservation = widget.initialReservation;
-    userReservations = [widget.initialReservation!]; // Only show the tapped one
+    userReservations = [widget.initialReservation!];
   } else {
     _fetchReservations();
   }

@@ -264,8 +264,8 @@ class _ParkingMapScreenState extends State<ParkingMapScreen> {
     double ySpacing = 80;
 
     for (int i = 0; i < slots.length; i++) {
-      double dx = startX + (i % 3) * xSpacing;
-      double dy = startY + (i ~/ 3) * ySpacing;
+      double dx = startX + (i % 4) * xSpacing;
+      double dy = startY + (i ~/ 4) * ySpacing;
       positions.add(Offset(dx, dy));
     }
     return positions;
