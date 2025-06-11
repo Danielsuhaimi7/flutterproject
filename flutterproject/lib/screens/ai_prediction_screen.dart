@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'weekly_summary_screen.dart';
 
 class AIPredictionScreen extends StatefulWidget {
   const AIPredictionScreen({super.key});
@@ -115,15 +116,24 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
                       ),
                     ),
                   ),
-                  ElevatedButton.icon(
-                    onPressed: fetchWeeklyAvailability,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text("Refresh Data"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
-                      foregroundColor: Colors.white,
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const WeeklySummaryScreen(),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.deepPurple.shade100,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text("View Weekly Summary"),
                     ),
-                  ),
                 ],
               ),
             ),
