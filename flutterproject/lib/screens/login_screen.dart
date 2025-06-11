@@ -43,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (response['status'] == 'success') {
       final role = response['role'];
       final studentId = response['student_id'];
-      final name = response['name'];
+      final name = response['name']?.toString() ?? ''; 
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('studentId', studentId);
