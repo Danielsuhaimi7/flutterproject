@@ -26,6 +26,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
   GoogleMapController? _mapController;
+  List<Map<String, dynamic>> _fetchedParkings = [];
 
   final CameraPosition _initialPosition = const CameraPosition(
     target: LatLng(2.9264, 101.6424),
@@ -34,7 +35,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _isCreatingParking = false;
   LatLng? _newParkingLocation;
-  List<LatLng> _publicParkings = []; // 👈 All saved parkings from backend
+  List<LatLng> _publicParkings = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAllParkingLocations();
+  }
+
+  Future<void> _loadAllParkingLocations() async {
+    final data = await ApiService.getParkingLocations();
+      setState(() {
+        _fetchedParkings = List<Map<String, dynamic>>.from(data);
+      });
+  }
 
   Set<Marker> _buildMarkers(BuildContext context) {
     final markers = <Marker>{
@@ -55,6 +69,17 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     };
 
+    for (var parking in _fetchedParkings) {
+      markers.add(
+        Marker(
+          markerId: MarkerId(parking['name']),
+          position: LatLng(parking['latitude'], parking['longitude']),
+          infoWindow: InfoWindow(title: parking['name']),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+        ),
+      );
+    }
+
     if (_newParkingLocation != null) {
       markers.add(
         Marker(
@@ -69,17 +94,29 @@ class _HomeScreenState extends State<HomeScreen> {
     return markers;
   }
 
-  void _onMapTapForParking(LatLng position) async {
+  void _onMapTapForParking(LatLng position) {
     setState(() {
       _newParkingLocation = position;
       _isCreatingParking = false;
     });
 
+    final TextEditingController nameController = TextEditingController();
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text("Create Parking Here?"),
-        content: Text("Latitude: ${position.latitude}\nLongitude: ${position.longitude}"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("Lat: ${position.latitude}, Lng: ${position.longitude}"),
+            const SizedBox(height: 10),
+            TextField(
+              controller: nameController,
+              decoration: const InputDecoration(labelText: "Parking Name"),
+            ),
+          ],
+        ),
         actions: [
           TextButton(
             child: const Text("Cancel"),
@@ -87,12 +124,26 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           TextButton(
             child: const Text("Confirm"),
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Parking created (simulated)")),
+              final success = await ApiService.addParkingLocation(
+                position.latitude,
+                position.longitude,
+                name: nameController.text.trim().isEmpty
+                    ? "Unnamed"
+                    : nameController.text.trim(),
               );
-              // TODO: Send to backend later
+
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Parking saved")),
+                );
+                _loadAllParkingLocations();
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Failed to save parking location")),
+                );
+              }
             },
           ),
         ],
@@ -263,44 +314,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ),
-          Positioned(
-            bottom: 100,
-            left: 0,
-            right: 0,
-            child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.black87,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: const [
-                      Icon(Icons.person, color: Colors.white),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Text("Daniel Danish bin Suhaimi", style: TextStyle(color: Colors.white)),
-                      ),
-                      Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: const [
-                      Icon(Icons.smart_display, color: Colors.white),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Text("Smart Campus Parking System", style: TextStyle(color: Colors.white)),
-                      ),
-                      Icon(Icons.arrow_forward_ios, size: 16, color: Colors.white),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
         ],
       ),
       bottomNavigationBar: Container(

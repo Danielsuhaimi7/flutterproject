@@ -125,11 +125,15 @@ class ApiService {
   }
 
   // ✅ NEW: Add Parking Location (admin)
-  static Future<bool> addParkingLocation(double lat, double lng) async {
+  static Future<bool> addParkingLocation(double lat, double lng, {String name = "Unnamed"}) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/add_parking'),
+      Uri.parse('$baseUrl/add_parking_location'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'latitude': lat, 'longitude': lng}),
+      body: jsonEncode({
+        'latitude': lat,
+        'longitude': lng,
+        'name': name,
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -139,14 +143,24 @@ class ApiService {
     return false;
   }
 
-  // ✅ NEW: Get All Parking Locations (public view)
-  static Future<List<Map<String, dynamic>>> getParkingLocations() async {
-    final response = await http.get(Uri.parse('$baseUrl/get_parking_locations'));
+  static Future<List<dynamic>> getParkingLocations() async {
+    final response = await http.get(Uri.parse('$baseUrl/get_parkings'));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return List<Map<String, dynamic>>.from(data['locations']);
+      return List<Map<String, dynamic>>.from(data['parkings']);
+    } else {
+      return [];
     }
-    return [];
   }
+
+  static Future<List<Map<String, dynamic>>> getAllParkings() async {
+  final response = await http.get(Uri.parse('$baseUrl/get_parkings'));
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return List<Map<String, dynamic>>.from(data['parkings']);
+  }
+  return [];
+}
 }
