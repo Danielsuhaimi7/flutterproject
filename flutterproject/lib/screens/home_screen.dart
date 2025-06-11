@@ -10,8 +10,13 @@ import 'navigation_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String username;
+  final String role;
 
-  const HomeScreen({super.key, required this.username});
+  const HomeScreen({
+    super.key,
+    required this.username,
+    this.role = 'user',
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -53,7 +58,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     if (index == 1) {
-      // 🔄 Fixed to navigate to NavigationScreen
       Navigator.pushNamed(context, '/navigation');
     } else if (index == 2) {
       Navigator.push(
@@ -99,6 +103,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final bool isAdmin = widget.role == 'admin';
+
     return Scaffold(
       extendBody: true,
       backgroundColor: Colors.grey[200],
@@ -182,6 +188,57 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
+
+          // Admin Panel Section (only shown if role == admin)
+          if (isAdmin)
+            Positioned(
+              bottom: 200,
+              left: 16,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.deepPurple,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      "Admin Panel",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.add),
+                      label: const Text("Manage Parking Slots"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.deepPurple,
+                      ),
+                      onPressed: () {
+                        // TODO: Navigate to admin parking management screen
+                      },
+                    ),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.report),
+                      label: const Text("View Reports"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.deepPurple,
+                      ),
+                      onPressed: () {
+                        // TODO: Navigate to admin report viewer
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
           Positioned(
             bottom: 100,
             left: 0,

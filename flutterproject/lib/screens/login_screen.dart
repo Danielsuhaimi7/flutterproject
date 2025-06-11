@@ -51,7 +51,12 @@ class _LoginScreenState extends State<LoginScreen> {
       await prefs.setString('name', name); 
 
       if (role == 'admin') {
-        Navigator.pushReplacementNamed(context, '/admin_dashboard');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HomeScreen(username: studentId, role: role),
+          ),
+        );
       } else {
         Navigator.pushReplacement(
           context,
