@@ -162,5 +162,26 @@ class ApiService {
     return List<Map<String, dynamic>>.from(data['parkings']);
   }
   return [];
-}
+  }
+
+  static Future<bool> saveParkingLayout({
+    required int parkingId,
+    required List<Map<String, dynamic>> slots,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/save_layout'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'parking_id': parkingId,
+        'slots': slots,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['status'] == 'success';
+    }
+
+    return false;
+  }
 }

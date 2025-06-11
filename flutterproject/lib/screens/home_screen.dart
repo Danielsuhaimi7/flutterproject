@@ -8,6 +8,7 @@ import 'history_screen.dart';
 import 'ai_prediction_screen.dart';
 import 'navigation_screen.dart';
 import '../services/api_service.dart';
+import 'parking_layout_editor.dart';
 
 class HomeScreen extends StatefulWidget {
   final String username;
@@ -76,6 +77,11 @@ class _HomeScreenState extends State<HomeScreen> {
           position: LatLng(parking['latitude'], parking['longitude']),
           infoWindow: InfoWindow(title: parking['name']),
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+          onTap: () {
+            if (widget.role == 'admin') {
+              _showSlotLayoutDialog(parking);
+            }
+          },
         ),
       );
     }
@@ -145,6 +151,54 @@ class _HomeScreenState extends State<HomeScreen> {
                 );
               }
             },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSlotLayoutDialog(Map<String, dynamic> parking) {
+    final TextEditingController slotController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text("Set Slots for ${parking['name']}"),
+        content: TextField(
+          controller: slotController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(labelText: "Number of Slots"),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              final int? slotCount = int.tryParse(slotController.text.trim());
+              if (slotCount == null || slotCount <= 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Invalid slot count")),
+                );
+                return;
+              }
+
+              Navigator.of(ctx).pop();
+
+              // ✅ Navigate to layout editor instead of saving immediately
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ParkingLayoutEditorScreen(
+                    parkingId: parking['id'],
+                    parkingName: parking['name'],
+                    totalSlots: slotCount,
+                  ),
+                ),
+              );
+            },
+            child: const Text("Continue"),
           ),
         ],
       ),
