@@ -124,7 +124,6 @@ class ApiService {
     return [];
   }
 
-  // ✅ NEW: Add Parking Location (admin)
   static Future<bool> addParkingLocation(double lat, double lng, {String name = "Unnamed"}) async {
     final response = await http.post(
       Uri.parse('$baseUrl/add_parking_location'),
@@ -143,7 +142,7 @@ class ApiService {
     return false;
   }
 
-  static Future<List<dynamic>> getParkingLocations() async {
+  static Future<List<Map<String, dynamic>>> getAllParkings() async {
     final response = await http.get(Uri.parse('$baseUrl/get_parkings'));
 
     if (response.statusCode == 200) {
@@ -154,14 +153,15 @@ class ApiService {
     }
   }
 
-  static Future<List<Map<String, dynamic>>> getAllParkings() async {
-  final response = await http.get(Uri.parse('$baseUrl/get_parkings'));
+  static Future<List<dynamic>> getParkingLocations() async {
+    final response = await http.get(Uri.parse('$baseUrl/get_parkings'));
 
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    return List<Map<String, dynamic>>.from(data['parkings']);
-  }
-  return [];
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(data['parkings']);
+    } else {
+      return [];
+    }
   }
 
   static Future<bool> saveParkingLayout({
@@ -183,5 +183,17 @@ class ApiService {
     }
 
     return false;
+  }
+
+  // ✅ NEW: Get AI parking availability prediction
+  static Future<List<Map<String, dynamic>>> getAvailabilityGraph() async {
+    final response = await http.get(Uri.parse('$baseUrl/availability_graph'));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(data['predictions']);
+    } else {
+      throw Exception('Failed to load availability graph');
+    }
   }
 }

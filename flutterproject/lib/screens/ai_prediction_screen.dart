@@ -11,7 +11,7 @@ class AIPredictionScreen extends StatefulWidget {
 }
 
 class _AIPredictionScreenState extends State<AIPredictionScreen> {
-  Map<int, Map<int, double>> availability = {}; // day -> hour -> probability
+  Map<int, Map<int, double>> availability = {};
   bool isLoading = true;
 
   final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -26,7 +26,7 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
   Future<void> fetchWeeklyAvailability() async {
     setState(() => isLoading = true);
     try {
-      final response = await http.get(Uri.parse('http://10.0.2.2:5000/weekly_availability'));
+      final response = await http.get(Uri.parse('http://192.168.1.110:5000/weekly_availability'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
@@ -64,58 +64,60 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  const Text(
-                    'Parking Availability Heatmap (This Week)',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 10),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              const SizedBox(width: 40),
-                              ...days.map((d) => Container(
-                                    width: 50,
-                                    alignment: Alignment.center,
-                                    child: Text(d, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                  )),
-                            ],
-                          ),
-                          ...hours.map((hour) => Row(
-                                children: [
-                                  SizedBox(
-                                    width: 40,
-                                    child: Text('${hour}h', style: const TextStyle(fontSize: 12)),
-                                  ),
-                                  ...List.generate(7, (dayIndex) {
-                                    final day = dayIndex + 1;
-                                    final prob = availability[day]?[hour] ?? 1.0;
-                                    return Container(
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  children: [
+                    const Text(
+                      'Parking Availability Heatmap (This Week)',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                const SizedBox(width: 40),
+                                ...days.map((d) => Container(
                                       width: 50,
-                                      height: 30,
-                                      margin: const EdgeInsets.all(1),
-                                      color: getColorForAvailability(prob),
-                                      child: Center(
-                                        child: Text(
-                                          '${(prob * 100).round()}%',
-                                          style: const TextStyle(fontSize: 10, color: Colors.black),
+                                      alignment: Alignment.center,
+                                      child: Text(d, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    )),
+                              ],
+                            ),
+                            ...hours.map((hour) => Row(
+                                  children: [
+                                    SizedBox(
+                                      width: 40,
+                                      child: Text('${hour}h', style: const TextStyle(fontSize: 12)),
+                                    ),
+                                    ...List.generate(7, (dayIndex) {
+                                      final day = dayIndex + 1;
+                                      final prob = availability[day]?[hour] ?? 1.0;
+                                      return Container(
+                                        width: 50,
+                                        height: 30,
+                                        margin: const EdgeInsets.all(1),
+                                        color: getColorForAvailability(prob),
+                                        child: Center(
+                                          child: Text(
+                                            '${(prob * 100).round()}%',
+                                            style: const TextStyle(fontSize: 10, color: Colors.black),
+                                          ),
                                         ),
-                                      ),
-                                    );
-                                  }),
-                                ],
-                              )),
-                        ],
+                                      );
+                                    }),
+                                  ],
+                                )),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () {
                         Navigator.push(
@@ -134,7 +136,9 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
                       ),
                       child: const Text("View Weekly Summary"),
                     ),
-                ],
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
             ),
     );
