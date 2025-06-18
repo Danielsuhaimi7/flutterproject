@@ -58,7 +58,7 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('AI Parking Availability'),
+        title: const Text('Parking Availability'),
         backgroundColor: Colors.deepPurple,
         foregroundColor: Colors.white,
       ),

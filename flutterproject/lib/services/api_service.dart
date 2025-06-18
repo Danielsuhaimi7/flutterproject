@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../models/reservation.dart';
 
 class ApiService {
-  static const String baseUrl = "http://10.0.2.2:5000";
+  static const String baseUrl = "http://192.168.1.110:5000";
 
   static Future<Map<String, dynamic>> loginUser(String studentId, String password) async {
     final response = await http.post(

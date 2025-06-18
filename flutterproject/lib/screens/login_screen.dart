@@ -35,37 +35,42 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void loginUser() async {
-    final response = await ApiService.loginUser(
-      idController.text.trim(),
-      passwordController.text.trim(),
-    );
+    print("Login button pressed"); // Debug log
 
-    if (response['status'] == 'success') {
-      final role = response['role'];
-      final studentId = response['student_id'];
-      final name = response['name']?.toString() ?? ''; 
+    try {
+      final response = await ApiService.loginUser(
+        idController.text.trim(),
+        passwordController.text.trim(),
+      );
 
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('studentId', studentId);
-      await prefs.setString('role', role);
-      await prefs.setString('name', name); 
+      if (response['status'] == 'success') {
+        final role = response['role'];
+        final studentId = response['student_id'];
+        final name = response['name']?.toString() ?? '';
 
-      if (role == 'admin') {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('studentId', studentId);
+        await prefs.setString('role', role);
+        await prefs.setString('name', name);
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => HomeScreen(username: studentId, role: role),
+            builder: (context) => HomeScreen(
+              username: studentId,
+              role: role,
+            ),
           ),
         );
       } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => HomeScreen(username: studentId)),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(response['message'] ?? "Login failed")),
         );
       }
-    } else {
+    } catch (e) {
+      print("Login error: $e"); // Debug log
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(response['message'] ?? "Login failed")),
+        SnackBar(content: Text("Connection error: ${e.toString()}")),
       );
     }
   }
@@ -159,12 +164,17 @@ class _LoginScreenState extends State<LoginScreen> {
                             : Colors.deepPurple.withOpacity(0.5),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      onPressed: isButtonEnabled ? loginUser : null,
+                      onPressed: isButtonEnabled
+                          ? () {
+                              print("Attempting login..."); // Debug
+                              loginUser();
+                            }
+                          : null,
                       child: Text(
                         "Log In",
                         style: TextStyle(
                           fontSize: 16,
-                          color: isButtonEnabled ? Colors.white : Colors.white70, // 👈 Changes text shade
+                          color: isButtonEnabled ? Colors.white : Colors.white70,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

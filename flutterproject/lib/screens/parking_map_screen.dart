@@ -1,8 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 import '../services/api_service.dart';
-import 'dart:math';
 
 class ParkingMapScreen extends StatefulWidget {
   final String slotToNavigate;
@@ -116,6 +117,38 @@ class _ParkingMapScreenState extends State<ParkingMapScreen> {
     }
   }
 
+  void _saveParkingToDatabase(String name, double lat, double lng) async {
+    final uri = Uri.parse('http://192.168.1.110:5000/add_parking_location');
+
+    try {
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'name': name,
+          'latitude': lat,
+          'longitude': lng,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+      if (data['status'] == 'success') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('✅ "$name" added to database')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('❌ Failed to add parking: ${data['message']}')),
+        );
+      }
+    } catch (e) {
+      print('Error saving parking: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Connection error: ${e.toString()}')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     Offset? reservedOffset;
@@ -136,6 +169,18 @@ class _ParkingMapScreenState extends State<ParkingMapScreen> {
         iconTheme: const IconThemeData(color: Colors.black),
       ),
       backgroundColor: Colors.grey[100],
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          _saveParkingToDatabase(
+            "MMU FCI Parking Area",
+            2.926540,
+            101.642700,
+          );
+        },
+        label: const Text("Save Parking"),
+        icon: const Icon(Icons.save),
+        backgroundColor: Colors.deepPurple,
+      ),
       body: Column(
         children: [
           Expanded(
