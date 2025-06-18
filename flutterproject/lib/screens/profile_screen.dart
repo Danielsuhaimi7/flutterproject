@@ -1,7 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -22,6 +25,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String studentId = "";
   String realPassword = "";
+  File? profileImage;
 
   @override
   void initState() {
@@ -32,6 +36,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadProfile() async {
     final prefs = await SharedPreferences.getInstance();
     studentId = prefs.getString('studentId') ?? '';
+
+    final imagePath = prefs.getString('profileImagePath');
+    if (imagePath != null && File(imagePath).existsSync()) {
+      setState(() => profileImage = File(imagePath));
+    }
 
     try {
       final response = await http.post(
@@ -79,6 +88,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
 
         if (response.statusCode == 200) {
+          final prefs = await SharedPreferences.getInstance();
+          if (profileImage != null) {
+            await prefs.setString('profileImagePath', profileImage!.path);
+          }
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profile updated successfully')),
           );
@@ -100,6 +114,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+
+    if (picked != null) {
+      setState(() {
+        profileImage = File(picked.path);
+      });
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('profileImagePath', picked.path);
+    }
+  }
+
+  Future<void> _removeImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('profileImagePath');
+    setState(() {
+      profileImage = null;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,10 +150,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: ListView(
             children: [
               const SizedBox(height: 20),
-              const CircleAvatar(
-                radius: 50,
-                backgroundColor: Colors.deepPurple,
-                child: Icon(Icons.person, size: 50, color: Colors.white),
+              Center(
+                child: Stack(
+                  children: [
+                    GestureDetector(
+                      onTap: _pickImage,
+                      child: CircleAvatar(
+                        radius: 50,
+                        backgroundColor: Colors.deepPurple,
+                        backgroundImage: profileImage != null ? FileImage(profileImage!) : null,
+                        child: profileImage == null
+                            ? const Icon(Icons.person, size: 50, color: Colors.white)
+                            : null,
+                      ),
+                    ),
+                    if (profileImage != null)
+                      Positioned(
+                        right: -4,
+                        top: -4,
+                        child: IconButton(
+                          icon: const Icon(Icons.close, color: Colors.red, size: 20),
+                          onPressed: _removeImage,
+                          splashRadius: 20,
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
               Center(

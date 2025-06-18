@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/api_service.dart';
@@ -16,6 +17,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
   List<Map<String, dynamic>> userReservations = [];
   bool isLoading = true;
   String studentId = "";
+  File? profileImage;
 
   @override
   void initState() {
@@ -27,6 +29,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final prefs = await SharedPreferences.getInstance();
     studentId = prefs.getString('studentId') ?? "";
     studentName = prefs.getString('name') ?? "";
+
+    final imagePath = prefs.getString('profileImagePath');
+    if (imagePath != null && File(imagePath).existsSync()) {
+      setState(() {
+        profileImage = File(imagePath);
+      });
+    }
 
     if (studentId.isNotEmpty) {
       final reservations = await ApiService.getUserReservationDetails(studentId);
@@ -96,7 +105,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     try {
       String timeStr;
 
-      // Convert int like 18 to '18:00'
       if (time is int) {
         timeStr = '${time.toString().padLeft(2, '0')}:00';
       } else {
@@ -124,10 +132,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
       backgroundColor: Colors.grey[100],
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32), // extra bottom padding
+                child: Column(
+                  children: [
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -136,7 +145,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     ),
                     child: Row(
                       children: [
-                        const CircleAvatar(radius: 24, backgroundColor: Colors.grey),
+                        CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Colors.grey.shade300,
+                          backgroundImage: profileImage != null ? FileImage(profileImage!) : null,
+                          child: profileImage == null
+                              ? const Icon(Icons.person, color: Colors.white)
+                              : null,
+                        ),
                         const SizedBox(width: 12),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,6 +211,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                 ],
               ),
             ),
+          ),
     );
   }
 }
