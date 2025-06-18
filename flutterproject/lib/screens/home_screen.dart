@@ -9,6 +9,7 @@ import 'ai_prediction_screen.dart';
 import 'navigation_screen.dart';
 import '../services/api_service.dart';
 import 'parking_layout_editor.dart';
+import 'profile_screen.dart'; // ✅ Import this
 
 class HomeScreen extends StatefulWidget {
   final String username;
@@ -36,7 +37,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool _isCreatingParking = false;
   LatLng? _newParkingLocation;
-  final List<LatLng> _publicParkings = [];
 
   @override
   void initState() {
@@ -46,9 +46,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadAllParkingLocations() async {
     final data = await ApiService.getParkingLocations();
-      setState(() {
-        _fetchedParkings = List<Map<String, dynamic>>.from(data);
-      });
+    setState(() {
+      _fetchedParkings = List<Map<String, dynamic>>.from(data);
+    });
   }
 
   Set<Marker> _buildMarkers(BuildContext context) {
@@ -57,16 +57,7 @@ class _HomeScreenState extends State<HomeScreen> {
         markerId: const MarkerId('fci_parking'),
         position: const LatLng(2.9280382, 101.6409516),
         infoWindow: const InfoWindow(title: 'MMU FCI Parking Area'),
-        onTap: () async {
-          final prefs = await SharedPreferences.getInstance();
-          final reservedSlot = prefs.getString('reservedSlot') ?? 'A1';
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ParkingMapScreen(slotToNavigate: reservedSlot),
-            ),
-          );
-        },
+        onTap: () {},
       ),
     };
 
@@ -186,7 +177,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
               Navigator.of(ctx).pop();
 
-              // ✅ Navigate to layout editor instead of saving immediately
               Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -205,7 +195,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _onNavTap(int index) async {
+  void _onNavTap(int index) {
     setState(() {
       _currentIndex = index;
     });
@@ -213,32 +203,11 @@ class _HomeScreenState extends State<HomeScreen> {
     if (index == 1) {
       Navigator.pushNamed(context, '/navigation');
     } else if (index == 2) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const ReportScreen()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportScreen()));
     } else if (index == 3) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const HistoryScreen()));
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen()));
     } else if (index == 4) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const AIPredictionScreen()));
-    }
-  }
-
-  void _goToFciParking() {
-    _mapController?.animateCamera(
-      CameraUpdate.newLatLngZoom(const LatLng(2.9280382, 101.6409516), 18),
-    );
-  }
-
-  void _goToCurrentLocation() async {
-    if (_mapController != null) {
-      var location = await _mapController!.getVisibleRegion();
-      _mapController!.animateCamera(
-        CameraUpdate.newLatLngZoom(
-          LatLng(
-            (location.northeast.latitude + location.southwest.latitude) / 2,
-            (location.northeast.longitude + location.southwest.longitude) / 2,
-          ),
-          17,
-        ),
-      );
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const AIPredictionScreen()));
     }
   }
 
@@ -255,34 +224,30 @@ class _HomeScreenState extends State<HomeScreen> {
             child: GoogleMap(
               initialCameraPosition: _initialPosition,
               markers: _buildMarkers(context),
-              onMapCreated: (controller) {
-                _mapController = controller;
-              },
+              onMapCreated: (controller) => _mapController = controller,
               myLocationEnabled: true,
               myLocationButtonEnabled: false,
               zoomControlsEnabled: false,
               onTap: _isCreatingParking ? _onMapTapForParking : null,
             ),
           ),
+
+          // ✅ Updated Profile button (top left)
           Positioned(
             top: 40,
             left: 16,
             child: Row(
               children: [
                 GestureDetector(
-                  onTap: () async {
-                    final prefs = await SharedPreferences.getInstance();
-                    final reservedSlot = prefs.getString('reservedSlot') ?? 'A1';
+                  onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) => ParkingMapScreen(slotToNavigate: reservedSlot),
-                      ),
+                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
                     );
                   },
                   child: CircleAvatar(
                     backgroundColor: Colors.black,
-                    child: const Icon(Icons.map, color: Colors.white),
+                    child: const Icon(Icons.person, color: Colors.white),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -296,6 +261,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
+
+          // Top right FABs
           Positioned(
             top: 40,
             right: 16,
@@ -306,19 +273,38 @@ class _HomeScreenState extends State<HomeScreen> {
                 FloatingActionButton.small(
                   heroTag: "btn1",
                   backgroundColor: Colors.blue,
-                  onPressed: _goToFciParking,
+                  onPressed: () {
+                    _mapController?.animateCamera(
+                      CameraUpdate.newLatLngZoom(const LatLng(2.9280382, 101.6409516), 18),
+                    );
+                  },
                   child: const Icon(Icons.local_parking, color: Colors.white),
                 ),
                 const SizedBox(height: 8),
                 FloatingActionButton.small(
                   heroTag: "btn2",
                   backgroundColor: Colors.green,
-                  onPressed: _goToCurrentLocation,
+                  onPressed: () async {
+                    if (_mapController != null) {
+                      var location = await _mapController!.getVisibleRegion();
+                      _mapController!.animateCamera(
+                        CameraUpdate.newLatLngZoom(
+                          LatLng(
+                            (location.northeast.latitude + location.southwest.latitude) / 2,
+                            (location.northeast.longitude + location.southwest.longitude) / 2,
+                          ),
+                          17,
+                        ),
+                      );
+                    }
+                  },
                   child: const Icon(Icons.my_location, color: Colors.white),
                 ),
               ],
             ),
           ),
+
+          // Admin Panel
           if (isAdmin)
             Positioned(
               bottom: 200,
@@ -352,17 +338,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: const Icon(Icons.add),
                       label: const Text("Manage Parking Slots"),
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.deepPurple),
-                      onPressed: () {
-                        // TODO: Navigate to admin parking management screen
-                      },
+                      onPressed: () {},
                     ),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.report),
                       label: const Text("View Reports"),
                       style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.deepPurple),
-                      onPressed: () {
-                        // TODO: Navigate to admin report viewer
-                      },
+                      onPressed: () {},
                     ),
                   ],
                 ),

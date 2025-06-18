@@ -1,99 +1,67 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class ProfileScreen extends StatelessWidget {
-  final String userId;
-  final String name;
-  final String email;
-  final String phone;
-  final String dob;
+class ProfileScreen extends StatefulWidget {
+  const ProfileScreen({super.key});
 
-  const ProfileScreen({
-    super.key,
-    required this.userId,
-    required this.name,
-    required this.email,
-    required this.phone,
-    required this.dob,
-  });
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String name = '';
+  String studentId = '';
+  String role = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      name = prefs.getString('name') ?? '';
+      studentId = prefs.getString('studentId') ?? '';
+      role = prefs.getString('role') ?? '';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final passwordController = TextEditingController(text: '********');
-
     return Scaffold(
       appBar: AppBar(
-        leading: BackButton(color: Colors.black),
-        title: const Text('Edit Profile', style: TextStyle(color: Colors.black)),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        elevation: 0,
+        title: const Text("Profile"),
+        backgroundColor: Colors.deepPurple,
       ),
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+      body: Padding(
+        padding: const EdgeInsets.all(24),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 20),
-            CircleAvatar(
-              radius: 60,
-              backgroundColor: Colors.grey.shade200,
-              child: Icon(Icons.camera_alt, size: 36, color: Colors.deepPurple),
+            const CircleAvatar(
+              radius: 50,
+              backgroundColor: Colors.deepPurple,
+              child: Icon(Icons.person, size: 50, color: Colors.white),
             ),
+            const SizedBox(height: 20),
+            Text("Name: $name", style: const TextStyle(fontSize: 18)),
             const SizedBox(height: 12),
-            Text(userId, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-
+            Text("Student ID: $studentId", style: const TextStyle(fontSize: 18)),
+            const SizedBox(height: 12),
+            Text("Role: $role", style: const TextStyle(fontSize: 18)),
             const SizedBox(height: 24),
-            buildTextField("Name", name),
-            const SizedBox(height: 16),
-            buildTextField("Email", email),
-            const SizedBox(height: 16),
-            TextField(
-              controller: passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            buildDropdownField("Date of Birth", dob),
-            const SizedBox(height: 16),
-            buildDropdownField("Phone Number", phone),
-
-            const SizedBox(height: 28),
             ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.deepPurple,
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              child: const Text("Save changes", style: TextStyle(fontSize: 16)),
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple),
+              child: const Text("Back to Home"),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget buildTextField(String label, String value) {
-    return TextField(
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: value,
-        border: const OutlineInputBorder(),
-      ),
-    );
-  }
-
-  Widget buildDropdownField(String label, String value) {
-    return TextField(
-      readOnly: true,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: value,
-        suffixIcon: const Icon(Icons.arrow_drop_down),
-        border: const OutlineInputBorder(),
       ),
     );
   }

@@ -169,18 +169,6 @@ class _ParkingMapScreenState extends State<ParkingMapScreen> {
         iconTheme: const IconThemeData(color: Colors.black),
       ),
       backgroundColor: Colors.grey[100],
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          _saveParkingToDatabase(
-            "MMU FCI Parking Area",
-            2.926540,
-            101.642700,
-          );
-        },
-        label: const Text("Save Parking"),
-        icon: const Icon(Icons.save),
-        backgroundColor: Colors.deepPurple,
-      ),
       body: Column(
         children: [
           Expanded(
