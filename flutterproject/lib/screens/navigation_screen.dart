@@ -139,43 +139,48 @@ void initState() {
               child: Text("No reservations found."),
             ),
           Expanded(
-            child: Stack(
-              children: [
-                if (reservedOffset != null)
-                  CustomPaint(
-                    size: Size.infinite,
-                    painter: DottedLinePainter(entrancePosition, reservedOffset),
-                  ),
-                Positioned(
-                  left: entrancePosition.dx,
-                  top: entrancePosition.dy,
-                  child: const Icon(Icons.directions_car, size: 36, color: Colors.black),
-                ),
-                for (int i = 0; i < slots.length; i++)
-                  Positioned(
-                    left: slotPositions[i].dx,
-                    top: slotPositions[i].dy,
-                    child: Container(
-                      width: 40,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: slots[i] == selectedSlot
-                            ? Colors.deepPurple
-                            : Colors.green,
-                        borderRadius: BorderRadius.circular(8),
+            child: SingleChildScrollView(
+              child: SizedBox(
+                height: 900, // or adjust based on your layout size
+                child: Stack(
+                  children: [
+                    if (reservedOffset != null)
+                      CustomPaint(
+                        size: Size.infinite,
+                        painter: DottedLinePainter(entrancePosition, reservedOffset),
                       ),
-                      child: Center(
-                        child: Text(
-                          slots[i],
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                    Positioned(
+                      left: entrancePosition.dx,
+                      top: entrancePosition.dy,
+                      child: const Icon(Icons.directions_car, size: 36, color: Colors.black),
+                    ),
+                    for (int i = 0; i < slots.length; i++)
+                      Positioned(
+                        left: slotPositions[i].dx,
+                        top: slotPositions[i].dy,
+                        child: Container(
+                          width: 40,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: slots[i] == selectedSlot
+                                ? Colors.deepPurple
+                                : Colors.green,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Center(
+                            child: Text(
+                              slots[i],
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ),
-              ],
+                  ],
+                ),
+              ),
             ),
           ),
         ],

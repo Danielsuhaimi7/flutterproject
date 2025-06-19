@@ -9,7 +9,7 @@ import 'ai_prediction_screen.dart';
 import 'navigation_screen.dart';
 import '../services/api_service.dart';
 import 'parking_layout_editor.dart';
-import 'profile_screen.dart'; // ✅ Import this
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String username;
@@ -57,7 +57,18 @@ class _HomeScreenState extends State<HomeScreen> {
         markerId: const MarkerId('fci_parking'),
         position: const LatLng(2.9280382, 101.6409516),
         infoWindow: const InfoWindow(title: 'MMU FCI Parking Area'),
-        onTap: () {},
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+        onTap: () async {
+          final prefs = await SharedPreferences.getInstance();
+          final reservedSlot = prefs.getString('reservedSlot') ?? 'A1';
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ParkingMapScreen(slotToNavigate: reservedSlot),
+            ),
+          );
+        },
       ),
     };
 
@@ -231,8 +242,6 @@ class _HomeScreenState extends State<HomeScreen> {
               onTap: _isCreatingParking ? _onMapTapForParking : null,
             ),
           ),
-
-          // ✅ Updated Profile button (top left)
           Positioned(
             top: 40,
             left: 16,
@@ -245,24 +254,27 @@ class _HomeScreenState extends State<HomeScreen> {
                       MaterialPageRoute(builder: (_) => const ProfileScreen()),
                     );
                   },
-                  child: CircleAvatar(
+                  child: const CircleAvatar(
                     backgroundColor: Colors.black,
-                    child: const Icon(Icons.person, color: Colors.white),
+                    child: Icon(Icons.person, color: Colors.white),
                   ),
                 ),
                 const SizedBox(width: 8),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Welcome!", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 16)),
-                    Text(widget.username, style: const TextStyle(color: Colors.black, fontSize: 14)),
+                    const Text("Welcome!",
+                        style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16)),
+                    Text(widget.username,
+                        style: const TextStyle(color: Colors.black, fontSize: 14)),
                   ],
                 ),
               ],
             ),
           ),
-
-          // Top right FABs
           Positioned(
             top: 40,
             right: 16,
@@ -275,7 +287,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   backgroundColor: Colors.blue,
                   onPressed: () {
                     _mapController?.animateCamera(
-                      CameraUpdate.newLatLngZoom(const LatLng(2.9280382, 101.6409516), 18),
+                      CameraUpdate.newLatLngZoom(
+                          const LatLng(2.9280382, 101.6409516), 18),
                     );
                   },
                   child: const Icon(Icons.local_parking, color: Colors.white),
@@ -290,8 +303,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       _mapController!.animateCamera(
                         CameraUpdate.newLatLngZoom(
                           LatLng(
-                            (location.northeast.latitude + location.southwest.latitude) / 2,
-                            (location.northeast.longitude + location.southwest.longitude) / 2,
+                            (location.northeast.latitude +
+                                    location.southwest.latitude) /
+                                2,
+                            (location.northeast.longitude +
+                                    location.southwest.longitude) /
+                                2,
                           ),
                           17,
                         ),
@@ -303,8 +320,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-
-          // Admin Panel
           if (isAdmin)
             Positioned(
               bottom: 200,
@@ -318,18 +333,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: Column(
                   children: [
-                    const Text("Admin Panel", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                    const Text("Admin Panel",
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16)),
                     const SizedBox(height: 12),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.add_location_alt),
                       label: const Text("Create New Parking"),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.deepPurple),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.deepPurple),
                       onPressed: () {
                         setState(() {
                           _isCreatingParking = true;
                         });
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Tap on the map to place a new parking.")),
+                          const SnackBar(
+                              content: Text(
+                                  "Tap on the map to place a new parking.")),
                         );
                       },
                     ),
@@ -337,13 +360,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     ElevatedButton.icon(
                       icon: const Icon(Icons.add),
                       label: const Text("Manage Parking Slots"),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.deepPurple),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.deepPurple),
                       onPressed: () {},
                     ),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.report),
                       label: const Text("View Reports"),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.deepPurple),
+                      style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.deepPurple),
                       onPressed: () {},
                     ),
                   ],

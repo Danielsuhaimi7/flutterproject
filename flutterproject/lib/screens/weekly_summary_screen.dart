@@ -99,8 +99,16 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen> {
                             leftTitles: AxisTitles(
                               sideTitles: SideTitles(
                                 showTitles: true,
-                                getTitlesWidget: (value, _) => Text('${value.toInt()}%'),
                                 interval: 20,
+                                reservedSize: 42, // Ensures enough space for "100%"
+                                getTitlesWidget: (value, _) => SizedBox(
+                                  width: 40,
+                                  child: Text(
+                                    '${value.toInt()}%',
+                                    style: const TextStyle(fontSize: 12),
+                                    textAlign: TextAlign.right,
+                                  ),
+                                ),
                               ),
                             ),
                             rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),

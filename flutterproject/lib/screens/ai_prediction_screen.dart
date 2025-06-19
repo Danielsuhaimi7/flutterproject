@@ -54,6 +54,12 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
     return Colors.red;
   }
 
+  String formatHour(int hour) {
+    final int displayHour = hour <= 12 ? hour : hour - 12;
+    final String period = hour < 12 ? 'AM' : 'PM';
+    return '$displayHour $period';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,7 +87,7 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
                           children: [
                             Row(
                               children: [
-                                const SizedBox(width: 40),
+                                const SizedBox(width: 48),
                                 ...days.map((d) => Container(
                                       width: 50,
                                       alignment: Alignment.center,
@@ -92,21 +98,21 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
                             ...hours.map((hour) => Row(
                                   children: [
                                     SizedBox(
-                                      width: 40,
-                                      child: Text('${hour}h', style: const TextStyle(fontSize: 12)),
+                                      width: 48,
+                                      child: Text(formatHour(hour), style: const TextStyle(fontSize: 12)),
                                     ),
                                     ...List.generate(7, (dayIndex) {
                                       final day = dayIndex + 1;
                                       final prob = availability[day]?[hour] ?? 1.0;
                                       return Container(
                                         width: 50,
-                                        height: 30,
-                                        margin: const EdgeInsets.all(1),
+                                        height: 32,
+                                        margin: const EdgeInsets.symmetric(horizontal: 1, vertical: 2),
                                         color: getColorForAvailability(prob),
                                         child: Center(
                                           child: Text(
                                             '${(prob * 100).round()}%',
-                                            style: const TextStyle(fontSize: 10, color: Colors.black),
+                                            style: const TextStyle(fontSize: 11, color: Colors.black),
                                           ),
                                         ),
                                       );
