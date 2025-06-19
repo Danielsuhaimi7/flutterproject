@@ -36,20 +36,20 @@ class _ManageUsersScreenState extends State<ManageUsersScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text("Edit ${user['student_id']}"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: nameController, decoration: const InputDecoration(labelText: "Name")),
-            TextField(controller: emailController, decoration: const InputDecoration(labelText: "Email")),
-            TextField(controller: phoneController, decoration: const InputDecoration(labelText: "Phone")),
-            TextField(controller: roleController, decoration: const InputDecoration(labelText: "Role")),
-          ],
+        contentPadding: const EdgeInsets.all(16),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameController, decoration: const InputDecoration(labelText: "Name")),
+              TextField(controller: emailController, decoration: const InputDecoration(labelText: "Email")),
+              TextField(controller: phoneController, decoration: const InputDecoration(labelText: "Phone")),
+              TextField(controller: roleController, decoration: const InputDecoration(labelText: "Role")),
+            ],
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text("Cancel"),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
           ElevatedButton(
             onPressed: () async {
               final success = await ApiService.updateUser({
