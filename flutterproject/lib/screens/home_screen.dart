@@ -10,6 +10,7 @@ import 'navigation_screen.dart';
 import '../services/api_service.dart';
 import 'parking_layout_editor.dart';
 import 'profile_screen.dart';
+import 'parking_custom_layout_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String username;
@@ -160,46 +161,45 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showSlotLayoutDialog(Map<String, dynamic> parking) {
-    final TextEditingController slotController = TextEditingController();
+  final TextEditingController slotController = TextEditingController();
 
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text("Set Slots for ${parking['name']}"),
-        content: TextField(
-          controller: slotController,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(labelText: "Number of Slots"),
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text("Set Slots for ${parking['name']}"),
+      content: TextField(
+        controller: slotController,
+        keyboardType: TextInputType.number,
+        decoration: const InputDecoration(labelText: "Number of Slots"),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: const Text("Cancel"),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () async {
-              final int? slotCount = int.tryParse(slotController.text.trim());
-              if (slotCount == null || slotCount <= 0) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Invalid slot count")),
-                );
-                return;
-              }
-
-              Navigator.of(ctx).pop();
-
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ParkingLayoutEditorScreen(
-                    parkingId: parking['id'],
-                    parkingName: parking['name'],
-                    totalSlots: slotCount,
-                  ),
-                ),
+        TextButton(
+          onPressed: () {
+            final int? slotCount = int.tryParse(slotController.text.trim());
+            if (slotCount == null || slotCount <= 0) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Invalid slot count")),
               );
-            },
-            child: const Text("Continue"),
+              return;
+            }
+
+            Navigator.of(ctx).pop();
+
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ParkingCustomLayoutScreen(
+                  parkingName: parking['name'],
+                  totalSlots: slotCount,
+                ),
+              ),
+            );
+          },
+          child: const Text("Customize Layout"),
           ),
         ],
       ),
