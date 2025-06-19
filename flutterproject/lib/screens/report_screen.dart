@@ -17,11 +17,14 @@ class _ReportScreenState extends State<ReportScreen> {
   final nameController = TextEditingController();
   final idController = TextEditingController();
   String? selectedParking;
+  int? selectedSlot;
   String? selectedReport;
   File? selectedFile;
 
   List<String> parkingOptions = [];
+  List<int> parkingSlots = [];
   bool isLoadingParkingOptions = true;
+  bool isLoadingSlots = false;
 
   final List<String> reportTypes = [
     'Blocked Parking',
@@ -39,7 +42,6 @@ class _ReportScreenState extends State<ReportScreen> {
   Future<void> _fetchParkingLocations() async {
     try {
       final response = await http.get(Uri.parse('http://192.168.1.110:5000/get_parkings'));
-
       if (response.statusCode == 200) {
         final data = Map<String, dynamic>.from(jsonDecode(response.body));
         final List<dynamic> parkings = data['parkings'];
@@ -55,9 +57,43 @@ class _ReportScreenState extends State<ReportScreen> {
       setState(() {
         isLoadingParkingOptions = false;
       });
-      print('Error fetching parking options: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error loading parking list")),
+        const SnackBar(content: Text("Error loading parking list")),
+      );
+    }
+  }
+
+  Future<void> _fetchSlotsForSelectedParking(String parkingName) async {
+    setState(() {
+      isLoadingSlots = true;
+      selectedSlot = null;
+      parkingSlots = [];
+    });
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://192.168.1.110:5000/get_custom_layout'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'parking_name': parkingName}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final layout = List<Map<String, dynamic>>.from(data['layout']);
+
+        setState(() {
+          parkingSlots = layout.map((slot) => (slot['index'] as int) + 1).toList(); // +1 for A1, A2...
+          isLoadingSlots = false;
+        });
+      } else {
+        throw Exception("Failed to fetch slots");
+      }
+    } catch (e) {
+      setState(() {
+        isLoadingSlots = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error loading parking slots")),
       );
     }
   }
@@ -72,7 +108,11 @@ class _ReportScreenState extends State<ReportScreen> {
   }
 
   Future<void> _submitReport() async {
-    if (selectedParking == null || selectedReport == null || nameController.text.isEmpty || idController.text.isEmpty) {
+    if (selectedParking == null ||
+        selectedReport == null ||
+        nameController.text.isEmpty ||
+        idController.text.isEmpty ||
+        selectedSlot == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please complete all required fields.")),
       );
@@ -86,7 +126,8 @@ class _ReportScreenState extends State<ReportScreen> {
         ..fields['student_id'] = idController.text
         ..fields['name'] = nameController.text
         ..fields['parking_location'] = selectedParking!
-        ..fields['report_type'] = selectedReport!;
+        ..fields['report_type'] = selectedReport!
+        ..fields['slot'] = "A$selectedSlot";
 
       if (selectedFile != null) {
         request.files.add(await http.MultipartFile.fromPath(
@@ -116,8 +157,10 @@ class _ReportScreenState extends State<ReportScreen> {
         idController.clear();
         setState(() {
           selectedParking = null;
+          selectedSlot = null;
           selectedReport = null;
           selectedFile = null;
+          parkingSlots = [];
         });
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -125,7 +168,6 @@ class _ReportScreenState extends State<ReportScreen> {
         );
       }
     } catch (e) {
-      print("Report error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Connection error: ${e.toString()}")),
       );
@@ -166,9 +208,29 @@ class _ReportScreenState extends State<ReportScreen> {
                     items: parkingOptions.map((location) {
                       return DropdownMenuItem(value: location, child: Text(location));
                     }).toList(),
-                    onChanged: (value) => setState(() => selectedParking = value),
+                    onChanged: (value) {
+                      setState(() => selectedParking = value);
+                      if (value != null) {
+                        _fetchSlotsForSelectedParking(value);
+                      }
+                    },
                     decoration: const InputDecoration(border: OutlineInputBorder()),
                   ),
+
+            const SizedBox(height: 16),
+
+            if (selectedParking != null)
+              isLoadingSlots
+                  ? const CircularProgressIndicator()
+                  : DropdownButtonFormField<int>(
+                      value: selectedSlot,
+                      hint: const Text("Select Slot"),
+                      items: parkingSlots.map((slot) {
+                        return DropdownMenuItem(value: slot, child: Text("A$slot"));
+                      }).toList(),
+                      onChanged: (val) => setState(() => selectedSlot = val),
+                      decoration: const InputDecoration(border: OutlineInputBorder()),
+                    ),
 
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
@@ -180,8 +242,8 @@ class _ReportScreenState extends State<ReportScreen> {
               onChanged: (value) => setState(() => selectedReport = value),
               decoration: const InputDecoration(border: OutlineInputBorder()),
             ),
-            const SizedBox(height: 20),
 
+            const SizedBox(height: 20),
             GestureDetector(
               onTap: _pickFile,
               child: Container(
@@ -208,7 +270,6 @@ class _ReportScreenState extends State<ReportScreen> {
                 ),
               ),
             ),
-
             const SizedBox(height: 30),
             SizedBox(
               width: double.infinity,
@@ -219,7 +280,7 @@ class _ReportScreenState extends State<ReportScreen> {
                   backgroundColor: Colors.deepPurple.shade900,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                child: const Text("SUBMIT", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                child: const Text("SUBMIT", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white,)),
               ),
             )
           ],

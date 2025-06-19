@@ -13,6 +13,7 @@ import 'profile_screen.dart';
 import 'parking_custom_layout_screen.dart';
 import 'reserve_custom_parking_screen.dart';
 import 'manage_users_screen.dart';
+import 'view_reports_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String username;
@@ -401,7 +402,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => const ReportScreen()),
+                          MaterialPageRoute(builder: (_) => const ViewReportsScreen()),
                         );
                       },
                     ),
