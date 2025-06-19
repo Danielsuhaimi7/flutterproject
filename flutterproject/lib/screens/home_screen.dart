@@ -12,6 +12,7 @@ import 'parking_layout_editor.dart';
 import 'profile_screen.dart';
 import 'parking_custom_layout_screen.dart';
 import 'reserve_custom_parking_screen.dart';
+import 'manage_users_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String username;
@@ -397,7 +398,27 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           foregroundColor: Colors.deepPurple),
-                      onPressed: () {},
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ReportScreen()),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.manage_accounts),
+                      label: const Text("Manage Users"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.deepPurple,
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const ManageUsersScreen()),
+                        );
+                      },
                     ),
                   ],
                 ),

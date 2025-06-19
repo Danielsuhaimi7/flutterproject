@@ -3,7 +3,6 @@ import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/reserve_screen.dart';
 import 'screens/home_screen.dart';
-import 'screens/admin_dashboard.dart';
 import 'screens/navigation_screen.dart';
 
 void main() {
@@ -27,7 +26,6 @@ class MyApp extends StatelessWidget {
         '/register': (context) => const RegisterScreen(),
         '/reserve': (context) => const ReserveScreen(),
         '/home': (context) => const HomeScreen(username: 'Placeholder'),
-        '/admin_dashboard': (context) => AdminDashboardScreen(),
         '/navigation': (context) => const NavigationScreen(), // Add this line
       },
     );
