@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/api_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ReserveCustomParkingScreen extends StatefulWidget {
   final String parkingName;
@@ -13,6 +14,7 @@ class ReserveCustomParkingScreen extends StatefulWidget {
 
 class _ReserveCustomParkingScreenState extends State<ReserveCustomParkingScreen> {
   List<Map<String, dynamic>> layout = [];
+  Set<int> bookedIndices = {};
   int? selectedSlotIndex;
   DateTime selectedDate = DateTime.now();
   TimeOfDay selectedTime = TimeOfDay.now();
@@ -27,9 +29,22 @@ class _ReserveCustomParkingScreenState extends State<ReserveCustomParkingScreen>
   }
 
   Future<void> _loadLayout() async {
-    final fetched = await ApiService.getCustomLayout(widget.parkingName);
+    final layoutFetched = await ApiService.getCustomLayout(widget.parkingName);
+    final dateStr = DateFormat('yyyy-MM-dd').format(selectedDate);
+    final timeStr = DateFormat('HH:mm:ss').format(
+      DateTime(selectedDate.year, selectedDate.month, selectedDate.day, selectedTime.hour, selectedTime.minute),
+    );
+
+    final booked = await ApiService.getBookedCustomSlots(
+      parkingName: widget.parkingName,
+      date: dateStr,
+      time: timeStr,
+    );
+
     setState(() {
-      layout = fetched;
+      layout = layoutFetched;
+      bookedIndices = booked.toSet();
+      selectedSlotIndex = null;
       isLoading = false;
     });
   }
@@ -41,39 +56,78 @@ class _ReserveCustomParkingScreenState extends State<ReserveCustomParkingScreen>
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 30)),
     );
-    if (picked != null) setState(() => selectedDate = picked);
+    if (picked != null) {
+      setState(() => selectedDate = picked);
+      _loadLayout(); // refresh bookings
+    }
   }
 
   Future<void> _pickTime() async {
     final picked = await showTimePicker(
       context: context,
       initialTime: selectedTime,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+          child: child!,
+        );
+      },
     );
-    if (picked != null) setState(() => selectedTime = picked);
+
+    if (picked != null) {
+      setState(() => selectedTime = picked);
+      _loadLayout(); // refresh bookings
+    }
   }
 
-  void _confirmReservation() {
-    if (selectedSlotIndex == null) return;
+  void _confirmReservation() async {
+    final prefs = await SharedPreferences.getInstance();
+    final studentId = prefs.getString('studentId');
 
-    final slot = layout[selectedSlotIndex!];
+    if (studentId == null || selectedSlotIndex == null) return;
+
     final dateStr = DateFormat('yyyy-MM-dd').format(selectedDate);
-    final timeStr = selectedTime.format(context);
+    final timeStr = DateFormat('HH:mm:ss').format(DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+      selectedTime.hour,
+      selectedTime.minute,
+    ));
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Reserved Slot A${slot['index'] + 1} on $dateStr at $timeStr for $selectedDuration')),
+    final durationInt = int.parse(selectedDuration.split(" ")[0]);
+
+    final success = await ApiService.reserveCustomSlot(
+      studentId: studentId,
+      parkingName: widget.parkingName,
+      slotIndex: selectedSlotIndex!,
+      date: dateStr,
+      time: timeStr,
+      duration: durationInt,
     );
 
-    // TODO: Backend reservation API
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Reserved Slot A${selectedSlotIndex! + 1}')),
+      );
+      _loadLayout(); // Refresh UI after booking
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to reserve slot')),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final dateStr = DateFormat('yyyy-MM-dd').format(selectedDate);
-    final timeStr = selectedTime.format(context);
+    final timeStr = DateFormat('h:mm a').format(
+      DateTime(0, 0, 0, selectedTime.hour, selectedTime.minute),
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Parking Layout"),
+        title: const Text("Parking Layout"),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -93,6 +147,7 @@ class _ReserveCustomParkingScreenState extends State<ReserveCustomParkingScreen>
                           final index = entry.key;
                           final slot = entry.value;
                           final isSelected = selectedSlotIndex == index;
+                          final isBooked = bookedIndices.contains(index);
                           final dx = (slot['x'] ?? 0).toDouble();
                           final dy = (slot['y'] ?? 0).toDouble();
                           final isVertical = slot['vertical'] ?? true;
@@ -101,7 +156,9 @@ class _ReserveCustomParkingScreenState extends State<ReserveCustomParkingScreen>
                             left: dx,
                             top: dy,
                             child: GestureDetector(
-                              onTap: () => setState(() => selectedSlotIndex = index),
+                              onTap: isBooked
+                                  ? null
+                                  : () => setState(() => selectedSlotIndex = index),
                               child: RotatedBox(
                                 quarterTurns: isVertical ? 0 : 1,
                                 child: Container(
@@ -109,12 +166,19 @@ class _ReserveCustomParkingScreenState extends State<ReserveCustomParkingScreen>
                                   height: 60,
                                   alignment: Alignment.center,
                                   decoration: BoxDecoration(
-                                    color: isSelected ? Colors.deepPurple : Colors.green,
+                                    color: isBooked
+                                        ? Colors.red
+                                        : (isSelected
+                                            ? Colors.deepPurple
+                                            : Colors.green),
                                     borderRadius: BorderRadius.circular(6),
                                   ),
                                   child: Text(
                                     'A${slot['index'] + 1}',
-                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -131,7 +195,8 @@ class _ReserveCustomParkingScreenState extends State<ReserveCustomParkingScreen>
                             onTap: _pickDate,
                             child: Container(
                               height: 50,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
                               decoration: BoxDecoration(
                                 border: Border.all(color: Colors.grey),
                                 borderRadius: BorderRadius.circular(12),
@@ -147,7 +212,8 @@ class _ReserveCustomParkingScreenState extends State<ReserveCustomParkingScreen>
                             onTap: _pickTime,
                             child: Container(
                               height: 50,
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 12),
                               decoration: BoxDecoration(
                                 border: Border.all(color: Colors.grey),
                                 borderRadius: BorderRadius.circular(12),
@@ -175,16 +241,23 @@ class _ReserveCustomParkingScreenState extends State<ReserveCustomParkingScreen>
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
-                        onPressed: selectedSlotIndex != null ? _confirmReservation : null,
+                        onPressed: selectedSlotIndex != null
+                            ? _confirmReservation
+                            : null,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: selectedSlotIndex != null ? Colors.deepPurple : Colors.grey.shade400,
-                          foregroundColor: selectedSlotIndex != null ? Colors.white : Colors.black45,
+                          backgroundColor: selectedSlotIndex != null
+                              ? Colors.deepPurple
+                              : Colors.grey.shade400,
+                          foregroundColor: selectedSlotIndex != null
+                              ? Colors.white
+                              : Colors.black45,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text("Reserve Slot", style: TextStyle(fontSize: 16)),
+                        child: const Text("Reserve Slot",
+                            style: TextStyle(fontSize: 16)),
                       ),
                     ),
                     const SizedBox(height: 16),

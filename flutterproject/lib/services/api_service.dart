@@ -229,4 +229,55 @@ class ApiService {
       return false;
     }
   }
+
+  static Future<bool> reserveCustomSlot({
+  required String studentId,
+  required String parkingName,
+  required int slotIndex,
+  required String date,
+  required String time,
+  required int duration,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/reserve_custom_slot'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'student_id': studentId,
+        'parking_name': parkingName,
+        'slot_index': slotIndex,
+        'date': date,
+        'time': time,
+        'duration': duration,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data['status'] == 'success';
+    }
+    return false;
+  }
+
+  static Future<List<int>> getBookedCustomSlots({
+  required String parkingName,
+  required String date,
+  required String time,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/get_booked_custom_slots'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'parking_name': parkingName,
+        'date': date,
+        'time': time,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return List<int>.from(data['booked'] ?? []);
+    }
+
+    return [];
+  }
 }

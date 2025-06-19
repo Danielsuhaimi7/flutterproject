@@ -66,6 +66,12 @@ class _ParkingMapScreenState extends State<ParkingMapScreen> {
     final picked = await showTimePicker(
       context: context,
       initialTime: selectedTime,
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: false),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() => selectedTime = picked);
