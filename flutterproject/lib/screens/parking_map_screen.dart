@@ -262,8 +262,8 @@ class _ParkingMapScreenState extends State<ParkingMapScreen> {
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(16),
+          SafeArea(
+            minimum: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             child: SizedBox(
               width: double.infinity,
               child: ElevatedButton(

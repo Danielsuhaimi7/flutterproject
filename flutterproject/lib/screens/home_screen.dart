@@ -81,11 +81,29 @@ class _HomeScreenState extends State<HomeScreen> {
           position: LatLng(parking['latitude'], parking['longitude']),
           infoWindow: InfoWindow(title: parking['name']),
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-          onTap: () {
+          onTap: () async {
             if (widget.role == 'admin') {
               _showSlotLayoutDialog(parking);
+            } else {
+              // For users, load the layout and navigate to reservation screen
+              final prefs = await SharedPreferences.getInstance();
+              final layoutKey = 'layout_${parking['name']}';
+              final layoutData = prefs.getString(layoutKey);
+
+              if (layoutData != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ReserveCustomParkingScreen(parkingName: parking['name']),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('This parking has no saved layout yet.')),
+                );
+              }
             }
-          },
+          }
         ),
       );
     }

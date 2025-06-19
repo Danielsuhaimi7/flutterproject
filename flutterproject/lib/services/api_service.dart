@@ -196,4 +196,37 @@ class ApiService {
       throw Exception('Failed to load availability graph');
     }
   }
+
+  static Future<List<Map<String, dynamic>>> getCustomLayout(String parkingName) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/get_custom_layout'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'parking_name': parkingName}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(data['layout']);
+    } else {
+      return [];
+    }
+  }
+
+  static Future<bool> saveCustomLayout(String parkingName, List<Map<String, dynamic>> layoutData) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/save_custom_layout'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'parking_name': parkingName,
+          'layout': layoutData,
+        }),
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print("Error saving layout: $e");
+      return false;
+    }
+  }
 }

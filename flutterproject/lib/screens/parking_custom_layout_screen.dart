@@ -1,6 +1,6 @@
-import 'dart:convert'; // ✅ For jsonEncode
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // ✅ For SharedPreferences
+import '../services/api_service.dart';
 
 class ParkingCustomLayoutScreen extends StatefulWidget {
   final String parkingName;
@@ -33,7 +33,7 @@ class _ParkingCustomLayoutScreenState extends State<ParkingCustomLayoutScreen> {
     );
   }
 
-  Future<void> _saveLayout() async {
+  void _saveLayout() async {
     final layoutData = List.generate(widget.totalSlots, (index) => {
       "index": index,
       "x": positions[index].dx,
@@ -41,14 +41,20 @@ class _ParkingCustomLayoutScreenState extends State<ParkingCustomLayoutScreen> {
       "vertical": isVertical[index],
     });
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('layout_${widget.parkingName}', jsonEncode(layoutData));
+    final success = await ApiService.saveCustomLayout(widget.parkingName, layoutData);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Layout saved successfully.")),
-    );
-
-    Navigator.pop(context); // Optionally navigate to reservation screen
+    if (success) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Layout saved successfully.")),
+      );
+      Navigator.pop(context);
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to save layout.")),
+      );
+    }
   }
 
   @override
