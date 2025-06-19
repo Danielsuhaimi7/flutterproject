@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ReserveCustomParkingScreen extends StatefulWidget {
-  const ReserveCustomParkingScreen({super.key});
+  final String parkingName;
+
+  const ReserveCustomParkingScreen({
+    super.key,
+    required this.parkingName,
+  });
 
   @override
   State<ReserveCustomParkingScreen> createState() => _ReserveCustomParkingScreenState();
@@ -46,7 +51,7 @@ class _ReserveCustomParkingScreenState extends State<ReserveCustomParkingScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Reserve Slot"),
+        title: Text("Reserve - ${widget.parkingName}"),
         backgroundColor: Colors.deepPurple,
       ),
       body: SafeArea(

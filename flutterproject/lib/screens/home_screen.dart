@@ -11,6 +11,7 @@ import '../services/api_service.dart';
 import 'parking_layout_editor.dart';
 import 'profile_screen.dart';
 import 'parking_custom_layout_screen.dart';
+import 'reserve_custom_parking_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final String username;
@@ -96,10 +97,17 @@ class _HomeScreenState extends State<HomeScreen> {
           position: _newParkingLocation!,
           infoWindow: const InfoWindow(title: 'New Parking (Temp)'),
           icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => ReserveCustomParkingScreen(parkingName: 'New Parking'),
+              ),
+            );
+          },
         ),
       );
     }
-
     return markers;
   }
 
