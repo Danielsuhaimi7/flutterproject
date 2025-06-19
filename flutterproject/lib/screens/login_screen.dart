@@ -35,8 +35,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void loginUser() async {
-    print("Login button pressed"); // Debug log
-
     try {
       final response = await ApiService.loginUser(
         idController.text.trim(),
@@ -68,7 +66,6 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
     } catch (e) {
-      print("Login error: $e"); // Debug log
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Connection error: ${e.toString()}")),
       );
@@ -87,23 +84,24 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         child: Center(
-          child: Container(
-            margin: const EdgeInsets.all(24),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black12,
-                  blurRadius: 12,
-                  offset: Offset(0, 6),
-                )
-              ],
-            ),
-            width: 380,
-            child: SingleChildScrollView(
+          child: SingleChildScrollView(
+            child: Container(
+              margin: const EdgeInsets.all(24),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 12,
+                    offset: Offset(0, 6),
+                  )
+                ],
+              ),
+              width: 380,
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.directions_car, size: 48, color: Colors.deepPurple),
                   const SizedBox(height: 12),
@@ -148,10 +146,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const Text("Remember me"),
                       const Spacer(),
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text("Forgot Password?"),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 12),
@@ -164,12 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             : Colors.deepPurple.withOpacity(0.5),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      onPressed: isButtonEnabled
-                          ? () {
-                              print("Attempting login..."); // Debug
-                              loginUser();
-                            }
-                          : null,
+                      onPressed: isButtonEnabled ? loginUser : null,
                       child: Text(
                         "Log In",
                         style: TextStyle(
