@@ -280,4 +280,32 @@ class ApiService {
 
     return [];
   }
+
+  static Future<List<Map<String, dynamic>>> fetchAllUsers() async {
+    final response = await http.get(Uri.parse('$baseUrl/users'));
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(data['users']);
+    } else {
+      return [];
+    }
+  }
+
+  static Future<bool> deleteUser(String studentId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/delete_user'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'student_id': studentId}),
+    );
+    return response.statusCode == 200;
+  }
+
+  static Future<bool> updateUser(Map<String, String> userData) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/edit_user'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(userData),
+    );
+    return response.statusCode == 200;
+  }
 }
