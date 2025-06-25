@@ -38,11 +38,55 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
 
     if (studentId.isNotEmpty) {
-      final reservations = await ApiService.getUserReservationDetails(studentId);
+      final reservations = await ApiService.getAllUserReservations(studentId);
       setState(() {
         userReservations = reservations;
         isLoading = false;
       });
+    }
+  }
+
+  String _formatDate(dynamic dateValue) {
+    try {
+      if (dateValue == null) return "N/A";
+
+      final raw = dateValue.toString().replaceAll('GMT', '').trim();
+      final parsed = DateTime.tryParse(raw) ??
+          DateTime.tryParse(DateTime.parse(raw).toIso8601String());
+
+      if (parsed != null) {
+        return "${parsed.day.toString().padLeft(2, '0')}-${parsed.month.toString().padLeft(2, '0')}-${parsed.year}";
+      }
+
+      return raw;
+    } catch (e) {
+      return dateValue.toString();
+    }
+  }
+
+  String _formatTime(dynamic time) {
+    try {
+      if (time == null) return "N/A";
+
+      if (time is int) {
+        final t = TimeOfDay(hour: time, minute: 0);
+        final hour = t.hourOfPeriod == 0 ? 12 : t.hourOfPeriod;
+        final period = t.period == DayPeriod.am ? "AM" : "PM";
+        return "$hour:00 $period";
+      }
+
+      final timeStr = time.toString().split(" ").first; // strip off GMT
+      final parsed = DateTime.tryParse("1970-01-01T$timeStr");
+      if (parsed != null) {
+        final t = TimeOfDay.fromDateTime(parsed);
+        final hour = t.hourOfPeriod == 0 ? 12 : t.hourOfPeriod;
+        final period = t.period == DayPeriod.am ? "AM" : "PM";
+        return "$hour:${t.minute.toString().padLeft(2, '0')} $period";
+      }
+
+      return time.toString();
+    } catch (e) {
+      return time.toString();
     }
   }
 
@@ -60,6 +104,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   void _showReservationDetails(BuildContext context, Map<String, dynamic> reservation) {
+    final slotCode = reservation['slot_code'] ?? 'A${(reservation['slot_index'] ?? 0) + 1}';
+    final parking = reservation['parking_name'] ?? 'MMU FCI Parking';
+    final date = _formatDate(reservation['date']);
+    final time = _formatTime(reservation['time']);
+    final duration = reservation['duration'] ?? 'N/A';
+
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
@@ -68,10 +118,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Slot: ${reservation['slot_code']}", style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text("Date: ${reservation['date']}"),
-            Text("Time: ${_formatTime(reservation['time'])}"),
-            Text("Duration: ${reservation['duration']} hour(s)"),
+            Text("Parking: $parking", style: const TextStyle(fontWeight: FontWeight.bold)),
+            Text("Slot: $slotCode"),
+            Text("Date: $date"),
+            Text("Time: $time"),
+            Text("Duration: $duration hour(s)"),
             const SizedBox(height: 10),
             GestureDetector(
               onTap: () {
@@ -101,25 +152,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  String _formatTime(dynamic time) {
-    try {
-      String timeStr;
-
-      if (time is int) {
-        timeStr = '${time.toString().padLeft(2, '0')}:00';
-      } else {
-        timeStr = time.toString();
-      }
-
-      final parsed = TimeOfDay.fromDateTime(DateTime.parse("1970-01-01T$timeStr"));
-      final hour = parsed.hourOfPeriod == 0 ? 12 : parsed.hourOfPeriod;
-      final period = parsed.period == DayPeriod.am ? "AM" : "PM";
-      return "$hour:${parsed.minute.toString().padLeft(2, '0')} $period";
-    } catch (e) {
-      return time.toString();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -134,85 +166,96 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32), // extra bottom padding
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                 child: Column(
                   children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 24,
-                          backgroundColor: Colors.grey.shade300,
-                          backgroundImage: profileImage != null ? FileImage(profileImage!) : null,
-                          child: profileImage == null
-                              ? const Icon(Icons.person, color: Colors.white)
-                              : null,
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(studentName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 4),
-                            Text(studentId, style: const TextStyle(color: Colors.grey)),
-                          ],
-                        )
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text("📄 Parking History", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                  ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: ListView.builder(
-                      itemCount: userReservations.length,
-                      itemBuilder: (context, index) {
-                        final res = userReservations[index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 6),
-                          child: ListTile(
-                            leading: const Icon(Icons.calendar_today),
-                            title: Text(res['date'] ?? ''),
-                            subtitle: Text("Time: ${_formatTime(res['time'])}"),
-                            trailing: Text(
-                              "Reserved",
-                              style: TextStyle(
-                                color: _getStatusColor("Reserved"),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            onTap: () => _showReservationDetails(context, res),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.deepPurple.shade700,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Text("Back to Homepage", style: TextStyle(fontSize: 16)),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundColor: Colors.grey.shade300,
+                            backgroundImage: profileImage != null ? FileImage(profileImage!) : null,
+                            child: profileImage == null
+                                ? const Icon(Icons.person, color: Colors.white)
+                                : null,
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(studentName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 4),
+                              Text(studentId, style: const TextStyle(color: Colors.grey)),
+                            ],
+                          )
+                        ],
+                      ),
                     ),
-                  )
-                ],
+                    const SizedBox(height: 24),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text("📄 Parking History", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: userReservations.length,
+                        itemBuilder: (context, index) {
+                          final res = userReservations[index];
+                          final formattedDate = _formatDate(res['date']);
+                          final formattedTime = _formatTime(res['time']);
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 6),
+                            child: ListTile(
+                              leading: const Icon(Icons.calendar_today),
+                              title: Text(
+                                res['parking_name'] != null ? "${res['parking_name']}" : "MMU FCI Parking",
+                                style: const TextStyle(fontWeight: FontWeight.w600),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(formattedDate),
+                                  Text("Time: $formattedTime"),
+                                ],
+                              ),
+                              trailing: Text(
+                                "Reserved",
+                                style: TextStyle(
+                                  color: _getStatusColor("Reserved"),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              onTap: () => _showReservationDetails(context, res),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple.shade700,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text("Back to Homepage", style: TextStyle(fontSize: 16)),
+                      ),
+                    )
+                  ],
+                ),
               ),
             ),
-          ),
     );
   }
 }

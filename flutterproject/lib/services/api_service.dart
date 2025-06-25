@@ -314,4 +314,21 @@ class ApiService {
     );
     return response.statusCode == 200;
   }
+
+  static Future<List<Map<String, dynamic>>> getAllUserReservations(String studentId) async {
+    print("➡️ Calling /user_all_reservations for $studentId");
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/user_all_reservations'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'student_id': studentId}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return List<Map<String, dynamic>>.from(data['reservations']);
+    } else {
+      return [];
+    }
+  }
 }
