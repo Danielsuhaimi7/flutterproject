@@ -63,7 +63,12 @@ class _NavigationScreenState extends State<NavigationScreen> {
         final layout = await ApiService.getCustomLayout(selectedParking);
         setState(() {
           slots = List.generate(layout.length, (i) => 'A${i + 1}');
-          slotPositions = _generateSlotPositions(layout.length);
+          slotPositions = layout.map<Offset>((slot) {
+            return Offset(
+              double.tryParse(slot['x'].toString()) ?? 0,
+              double.tryParse(slot['y'].toString()) ?? 0,
+            );
+          }).toList();
         });
       }
     }
