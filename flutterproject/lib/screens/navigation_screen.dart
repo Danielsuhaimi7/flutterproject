@@ -12,48 +12,67 @@ class NavigationScreen extends StatefulWidget {
 }
 
 class _NavigationScreenState extends State<NavigationScreen> {
-  final List<String> slots = List.generate(20, (i) => 'A${i + 1}');
   final Offset entrancePosition = Offset(160, 700);
-
+  List<String> slots = List.generate(20, (i) => 'A${i + 1}');
+  List<Offset> slotPositions = [];
   List<Map<String, dynamic>> userReservations = [];
   Map<String, dynamic>? selectedReservation;
-  late List<Offset> slotPositions;
 
-@override
-void initState() {
-  super.initState();
-  slotPositions = _generateSlotPositions();
+  List<String> parkingNames = ['MMU FCI Parking'];
+  String selectedParking = 'MMU FCI Parking';
 
-  if (widget.initialReservation != null) {
-    selectedReservation = widget.initialReservation;
-    userReservations = [widget.initialReservation!];
-  } else {
-    _fetchReservations();
-  }
-}
-
-  Future<void> _fetchReservations() async {
-    final prefs = await SharedPreferences.getInstance();
-    final studentId = prefs.getString('studentId');
-    if (studentId != null) {
-      final reservations = await ApiService.getUserReservationDetails(studentId);
-      setState(() {
-        userReservations = reservations;
-        if (reservations.isNotEmpty) {
-          selectedReservation = reservations.last;
-        }
-      });
+  @override
+  void initState() {
+    super.initState();
+    _loadParkingNames();
+    if (widget.initialReservation != null) {
+      selectedReservation = widget.initialReservation;
+      userReservations = [widget.initialReservation!];
     }
   }
 
-  List<Offset> _generateSlotPositions() {
-    List<Offset> positions = [];
-    double startX = 30;
-    double startY = 40;
-    double xSpacing = 80;
-    double ySpacing = 80;
+  Future<void> _loadParkingNames() async {
+    final customs = await ApiService.getParkingLocations();
+    setState(() {
+      parkingNames = ['MMU FCI Parking', ...customs.map((e) => e['name'].toString())];
+    });
+    _loadReservationsAndLayout();
+  }
 
-    for (int i = 0; i < slots.length; i++) {
+  Future<void> _loadReservationsAndLayout() async {
+    final prefs = await SharedPreferences.getInstance();
+    final studentId = prefs.getString('studentId');
+    if (studentId != null) {
+      final all = await ApiService.getAllUserReservations(studentId);
+      final relevant = all.where((r) =>
+          (selectedParking == 'MMU FCI Parking' && r['type'] == 'standard') ||
+          (selectedParking != 'MMU FCI Parking' && r['parking_name'] == selectedParking)
+      ).toList();
+
+      setState(() {
+        userReservations = relevant;
+        selectedReservation = relevant.isNotEmpty ? relevant.last : null;
+      });
+
+      if (selectedParking == 'MMU FCI Parking') {
+        setState(() {
+          slots = List.generate(20, (i) => 'A${i + 1}');
+          slotPositions = _generateSlotPositions();
+        });
+      } else {
+        final layout = await ApiService.getCustomLayout(selectedParking);
+        setState(() {
+          slots = List.generate(layout.length, (i) => 'A${i + 1}');
+          slotPositions = _generateSlotPositions(layout.length);
+        });
+      }
+    }
+  }
+
+  List<Offset> _generateSlotPositions([int count = 20]) {
+    List<Offset> positions = [];
+    double startX = 30, startY = 40, xSpacing = 80, ySpacing = 80;
+    for (int i = 0; i < count; i++) {
       double dx = startX + (i % 4) * xSpacing;
       double dy = startY + (i ~/ 4) * ySpacing;
       positions.add(Offset(dx, dy));
@@ -64,16 +83,14 @@ void initState() {
   String _formatTime(dynamic timeData) {
     try {
       String timeString = timeData.toString();
-
       if (RegExp(r'^\d{1,2}$').hasMatch(timeString)) {
         timeString = '${timeString.padLeft(2, '0')}:00';
       } else if (RegExp(r'^\d{1,2}:\d{1,2}$').hasMatch(timeString)) {
         timeString = '$timeString:00';
       }
-
       final dateTime = DateTime.parse('2020-01-01T$timeString');
       final timeOfDay = TimeOfDay.fromDateTime(dateTime);
-      return timeOfDay.format(context); // e.g., 6:00 PM
+      return timeOfDay.format(context);
     } catch (e) {
       return timeData.toString();
     }
@@ -83,8 +100,7 @@ void initState() {
   Widget build(BuildContext context) {
     String? selectedSlot = selectedReservation?['slot_code'];
     Offset? reservedOffset;
-
-    if (selectedSlot != null) {
+    if (selectedSlot != null && slots.isNotEmpty && slotPositions.isNotEmpty) {
       final index = slots.indexOf(selectedSlot);
       if (index != -1 && index < slotPositions.length) {
         reservedOffset = slotPositions[index];
@@ -95,6 +111,28 @@ void initState() {
       appBar: AppBar(title: const Text("My Reservations")),
       body: Column(
         children: [
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: DropdownButtonFormField<String>(
+              value: selectedParking,
+              decoration: InputDecoration(
+                labelText: 'Select Parking Area',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              items: parkingNames.map((name) => DropdownMenuItem(
+                value: name,
+                child: Text(name),
+              )).toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    selectedParking = value;
+                  });
+                  _loadReservationsAndLayout();
+                }
+              },
+            ),
+          ),
           if (userReservations.isNotEmpty)
             Column(
               children: [
@@ -125,6 +163,7 @@ void initState() {
                 if (selectedReservation != null)
                   Column(
                     children: [
+                      Text("(${selectedParking})", style: const TextStyle(fontWeight: FontWeight.bold)),
                       Text("Date: ${selectedReservation!['date']}"),
                       Text("Time: ${_formatTime(selectedReservation!['time'])}"),
                       Text("Duration: ${selectedReservation!['duration']} hour(s)"),
@@ -141,7 +180,7 @@ void initState() {
           Expanded(
             child: SingleChildScrollView(
               child: SizedBox(
-                height: 900, // or adjust based on your layout size
+                height: 900,
                 child: Stack(
                   children: [
                     if (reservedOffset != null)
@@ -154,30 +193,26 @@ void initState() {
                       top: entrancePosition.dy,
                       child: const Icon(Icons.directions_car, size: 36, color: Colors.black),
                     ),
-                    for (int i = 0; i < slots.length; i++)
-                      Positioned(
-                        left: slotPositions[i].dx,
-                        top: slotPositions[i].dy,
-                        child: Container(
-                          width: 40,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: slots[i] == selectedSlot
-                                ? Colors.deepPurple
-                                : Colors.green,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Center(
-                            child: Text(
-                              slots[i],
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
+                    if (slotPositions.length >= slots.length)
+                      for (int i = 0; i < slots.length; i++)
+                        Positioned(
+                          left: slotPositions[i].dx,
+                          top: slotPositions[i].dy,
+                          child: Container(
+                            width: 40,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: slots[i] == selectedSlot ? Colors.deepPurple : Colors.green,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Center(
+                              child: Text(
+                                slots[i],
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
                         ),
-                      ),
                   ],
                 ),
               ),
