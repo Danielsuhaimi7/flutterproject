@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutterproject/screens/parking_map_screen.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 class ReserveScreen extends StatefulWidget {
   const ReserveScreen({super.key});
@@ -18,11 +21,61 @@ class _ReserveScreenState extends State<ReserveScreen> {
   ];
   final List<String> durations = ["1 hour", "2 hours", "3 hours"];
 
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeNotifications();
+  }
+
+  Future<void> _initializeNotifications() async {
+    tz.initializeTimeZones();
+
+    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initSettings = InitializationSettings(android: androidInit);
+
+    await flutterLocalNotificationsPlugin.initialize(initSettings);
+  }
+
+  Future<void> scheduleReminderNotification(DateTime endTime) async {
+    final reminderTime = endTime.subtract(const Duration(minutes: 15));
+
+    await flutterLocalNotificationsPlugin.zonedSchedule(
+      0,
+      'Parking Reminder',
+      'Your parking will expire in 15 minutes.',
+      tz.TZDateTime.from(reminderTime, tz.local),
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'parking_channel',
+          'Parking Reminders',
+          channelDescription: 'Reminders for upcoming parking expirations',
+          importance: Importance.max,
+          priority: Priority.high,
+        ),
+      ),
+      androidAllowWhileIdle: true,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.dateAndTime,
+    );
+  }
+
   void confirmReservation() async {
     if (selectedSlot == null) return;
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('reservedSlot', selectedSlot!);
+
+    // Duration parsing
+    final int hours = int.tryParse(duration.split(" ").first) ?? 1;
+
+    // Schedule notification 15 mins before expiry
+    final now = DateTime.now();
+    final endTime = now.add(Duration(hours: hours));
+    await scheduleReminderNotification(endTime);
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text("Reserved $selectedSlot for $duration")),
