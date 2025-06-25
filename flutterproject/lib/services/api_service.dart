@@ -331,4 +331,20 @@ class ApiService {
       return [];
     }
   }
+
+  static Future<bool> deleteParkingLocation(String parkingName) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/delete_parking_location'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'parking_name': parkingName}),
+      );
+
+      final json = jsonDecode(response.body);
+      return json['status'] == 'success';
+    } catch (e) {
+      print("Delete parking error: $e");
+      return false;
+    }
+  }
 }

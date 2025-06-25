@@ -87,23 +87,21 @@ class _HomeScreenState extends State<HomeScreen> {
             if (widget.role == 'admin') {
               _showSlotLayoutDialog(parking);
             } else {
-              // For users, load the layout and navigate to reservation screen
-              final prefs = await SharedPreferences.getInstance();
-              final layoutKey = 'layout_${parking['name']}';
-              final layoutData = prefs.getString(layoutKey);
+                final layout = await ApiService.getCustomLayout(parking['name']);
+                print('📦 Layout for ${parking['name']}: $layout');
 
-              if (layoutData != null) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ReserveCustomParkingScreen(parkingName: parking['name']),
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('This parking has no saved layout yet.')),
-                );
-              }
+                if (layout.isNotEmpty) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ReserveCustomParkingScreen(parkingName: parking['name']),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('No parking layout has been saved for this parking yet.')),
+                  );
+                }
             }
           }
         ),
@@ -189,48 +187,100 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showSlotLayoutDialog(Map<String, dynamic> parking) {
-  final TextEditingController slotController = TextEditingController();
+    final TextEditingController slotController = TextEditingController();
 
-  showDialog(
-    context: context,
-    builder: (ctx) => AlertDialog(
-      title: Text("Set Slots for ${parking['name']}"),
-      content: TextField(
-        controller: slotController,
-        keyboardType: TextInputType.number,
-        decoration: const InputDecoration(labelText: "Number of Slots"),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(ctx).pop(),
-          child: const Text("Cancel"),
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text("Set Slots for ${parking['name']}"),
+        content: TextField(
+          controller: slotController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(labelText: "Number of Slots"),
         ),
-        TextButton(
-          onPressed: () {
-            final int? slotCount = int.tryParse(slotController.text.trim());
-            if (slotCount == null || slotCount <= 0) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Invalid slot count")),
-              );
-              return;
-            }
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () {
+              final int? slotCount = int.tryParse(slotController.text.trim());
+              if (slotCount == null || slotCount <= 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Invalid slot count")),
+                );
+                return;
+              }
 
-            Navigator.of(ctx).pop();
+              Navigator.of(ctx).pop();
 
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ParkingCustomLayoutScreen(
-                  parkingName: parking['name'],
-                  totalSlots: slotCount,
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ParkingCustomLayoutScreen(
+                    parkingName: parking['name'],
+                    totalSlots: slotCount,
+                  ),
                 ),
-              ),
-            );
-          },
-          child: const Text("Customize Layout"),
+              );
+            },
+            child: const Text("Customize Layout"),
           ),
         ],
       ),
+    );
+  }
+
+  void _showDeleteParkingDialog() {
+    showDialog(
+      context: context,
+      builder: (context) {
+        String? selectedParking;
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Delete Parking"),
+              content: DropdownButtonFormField<String>(
+                hint: const Text("Select Parking"),
+                value: selectedParking,
+                items: _fetchedParkings.map((parking) {
+                  return DropdownMenuItem<String>(
+                    value: parking['name'],
+                    child: Text(parking['name']),
+                  );
+                }).toList(),
+                onChanged: (value) => setState(() => selectedParking = value),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Cancel"),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    if (selectedParking != null) {
+                      final success = await ApiService.deleteParkingLocation(selectedParking!);
+                      Navigator.pop(context);
+                      if (success) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("✅ Parking deleted")),
+                        );
+                        _loadAllParkingLocations();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("❌ Failed to delete")),
+                        );
+                      }
+                    }
+                  },
+                  child: const Text("Delete"),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -303,51 +353,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-          Positioned(
-            top: 40,
-            right: 16,
-            child: Column(
-              children: [
-                const Icon(Icons.notifications_none_rounded, size: 28),
-                const SizedBox(height: 8),
-                FloatingActionButton.small(
-                  heroTag: "btn1",
-                  backgroundColor: Colors.blue,
-                  onPressed: () {
-                    _mapController?.animateCamera(
-                      CameraUpdate.newLatLngZoom(
-                          const LatLng(2.9280382, 101.6409516), 18),
-                    );
-                  },
-                  child: const Icon(Icons.local_parking, color: Colors.white),
-                ),
-                const SizedBox(height: 8),
-                FloatingActionButton.small(
-                  heroTag: "btn2",
-                  backgroundColor: Colors.green,
-                  onPressed: () async {
-                    if (_mapController != null) {
-                      var location = await _mapController!.getVisibleRegion();
-                      _mapController!.animateCamera(
-                        CameraUpdate.newLatLngZoom(
-                          LatLng(
-                            (location.northeast.latitude +
-                                    location.southwest.latitude) /
-                                2,
-                            (location.northeast.longitude +
-                                    location.southwest.longitude) /
-                                2,
-                          ),
-                          17,
-                        ),
-                      );
-                    }
-                  },
-                  child: const Icon(Icons.my_location, color: Colors.white),
-                ),
-              ],
-            ),
-          ),
           if (isAdmin)
             Positioned(
               bottom: 200,
@@ -386,13 +391,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 12),
                     ElevatedButton.icon(
-                      icon: const Icon(Icons.add),
-                      label: const Text("Manage Parking Slots"),
+                      icon: const Icon(Icons.delete_forever),
+                      label: const Text("Delete Parking"),
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: Colors.deepPurple),
-                      onPressed: () {},
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.deepPurple,
+                      ),
+                      onPressed: _showDeleteParkingDialog,
                     ),
+                    const SizedBox(height: 12),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.report),
                       label: const Text("View Reports"),
