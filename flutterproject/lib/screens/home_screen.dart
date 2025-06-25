@@ -35,8 +35,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Map<String, dynamic>> _fetchedParkings = [];
 
   final CameraPosition _initialPosition = const CameraPosition(
-    target: LatLng(2.9264, 101.6424),
-    zoom: 17,
+    target: LatLng(2.85873708245567, 101.75804653011701),
+    zoom: 16,
   );
 
   bool _isCreatingParking = false;
@@ -58,9 +58,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Set<Marker> _buildMarkers(BuildContext context) {
     final markers = <Marker>{
       Marker(
-        markerId: const MarkerId('fci_parking'),
-        position: const LatLng(2.9280382, 101.6409516),
-        infoWindow: const InfoWindow(title: 'MMU FCI Parking Area'),
+        markerId: const MarkerId('sky_parkg'),
+        position: const LatLng(2.861523104958513, 101.75613679731536),
+        infoWindow: const InfoWindow(title: 'Sky Park'),
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
         onTap: () async {
           final prefs = await SharedPreferences.getInstance();
@@ -355,7 +355,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           if (isAdmin)
             Positioned(
-              bottom: 200,
+              bottom: 120,
               left: 16,
               right: 16,
               child: Container(

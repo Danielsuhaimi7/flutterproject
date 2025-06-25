@@ -105,7 +105,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   void _showReservationDetails(BuildContext context, Map<String, dynamic> reservation) {
     final slotCode = reservation['slot_code'] ?? 'A${(reservation['slot_index'] ?? 0) + 1}';
-    final parking = reservation['parking_name'] ?? 'MMU FCI Parking';
+    final parking = reservation['parking_name'] ?? 'Sky Park';
     final date = _formatDate(reservation['date']);
     final time = _formatTime(reservation['time']);
     final duration = reservation['duration'] ?? 'N/A';
@@ -215,7 +215,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                             child: ListTile(
                               leading: const Icon(Icons.calendar_today),
                               title: Text(
-                                res['parking_name'] != null ? "${res['parking_name']}" : "MMU FCI Parking",
+                                res['parking_name'] != null ? "${res['parking_name']}" : "Sky Park",
                                 style: const TextStyle(fontWeight: FontWeight.w600),
                               ),
                               subtitle: Column(

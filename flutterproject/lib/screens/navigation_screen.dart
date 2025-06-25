@@ -18,8 +18,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
   List<Map<String, dynamic>> userReservations = [];
   Map<String, dynamic>? selectedReservation;
 
-  List<String> parkingNames = ['MMU FCI Parking'];
-  String selectedParking = 'MMU FCI Parking';
+  List<String> parkingNames = ['Sky Park'];
+  String selectedParking = 'Sky Park';
 
   @override
   void initState() {
@@ -34,7 +34,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
   Future<void> _loadParkingNames() async {
     final customs = await ApiService.getParkingLocations();
     setState(() {
-      parkingNames = ['MMU FCI Parking', ...customs.map((e) => e['name'].toString())];
+      parkingNames = ['Sky Park', ...customs.map((e) => e['name'].toString())];
     });
     _loadReservationsAndLayout();
   }
@@ -45,8 +45,8 @@ class _NavigationScreenState extends State<NavigationScreen> {
     if (studentId != null) {
       final all = await ApiService.getAllUserReservations(studentId);
       final relevant = all.where((r) =>
-          (selectedParking == 'MMU FCI Parking' && r['type'] == 'standard') ||
-          (selectedParking != 'MMU FCI Parking' && r['parking_name'] == selectedParking)
+          (selectedParking == 'Sky Park' && r['type'] == 'standard') ||
+          (selectedParking != 'Sky Park' && r['parking_name'] == selectedParking)
       ).toList();
 
       setState(() {
@@ -54,7 +54,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
         selectedReservation = relevant.isNotEmpty ? relevant.last : null;
       });
 
-      if (selectedParking == 'MMU FCI Parking') {
+      if (selectedParking == 'Sky Park') {
         setState(() {
           slots = List.generate(20, (i) => 'A${i + 1}');
           slotPositions = _generateSlotPositions();
