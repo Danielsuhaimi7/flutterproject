@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
+import '../config.dart'; 
 
 class ReportScreen extends StatefulWidget {
   const ReportScreen({super.key});
@@ -41,7 +42,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
   Future<void> _fetchParkingLocations() async {
     try {
-      final response = await http.get(Uri.parse('http://192.168.1.110:5000/get_parkings'));
+      final response = await http.get(Uri.parse('$baseUrl/get_parkings'));
       if (response.statusCode == 200) {
         final data = Map<String, dynamic>.from(jsonDecode(response.body));
         final List<dynamic> parkings = data['parkings'];
@@ -72,7 +73,7 @@ class _ReportScreenState extends State<ReportScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.1.110:5000/get_custom_layout'),
+        Uri.parse('$baseUrl/get_custom_layout'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'parking_name': parkingName}),
       );
@@ -119,7 +120,7 @@ class _ReportScreenState extends State<ReportScreen> {
       return;
     }
 
-    final uri = Uri.parse('http://192.168.1.110:5000/report');
+    final uri = Uri.parse('$baseUrl/report');
 
     try {
       var request = http.MultipartRequest('POST', uri)

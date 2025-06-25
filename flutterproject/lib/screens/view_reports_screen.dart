@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../config.dart';
 
 class ViewReportsScreen extends StatefulWidget {
   const ViewReportsScreen({super.key});
@@ -23,7 +24,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
 
   Future<void> fetchReports() async {
     try {
-      final response = await http.get(Uri.parse('http://192.168.1.110:5000/all_reports'));
+      final response = await http.get(Uri.parse('$baseUrl/all_reports'));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -54,7 +55,7 @@ class _ViewReportsScreenState extends State<ViewReportsScreen> {
   Future<void> markReportSettled(int id) async {
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.1.110:5000/mark_report_settled'),
+        Uri.parse('$baseUrl/mark_report_settled'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'report_id': id}),
       );

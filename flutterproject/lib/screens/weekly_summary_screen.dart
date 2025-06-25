@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
+import '../config.dart';
 
 class WeeklySummaryScreen extends StatefulWidget {
   const WeeklySummaryScreen({super.key});
@@ -26,7 +27,7 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen> {
   Future<void> fetchData() async {
     setState(() => isLoading = true);
     try {
-      final response = await http.get(Uri.parse('http://192.168.1.110:5000/daily_availability'));
+      final response = await http.get(Uri.parse('$baseUrl/weekly_availability'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final raw = data['availability'] as Map<String, dynamic>;

@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/reservation.dart';
+import '../config.dart';
 
 class ApiService {
-  static const String baseUrl = "http://192.168.1.110:5000";
 
   static Future<Map<String, dynamic>> loginUser(String studentId, String password) async {
     final response = await http.post(
@@ -143,12 +143,18 @@ class ApiService {
   }
 
   static Future<List<Map<String, dynamic>>> getAllParkings() async {
-    final response = await http.get(Uri.parse('$baseUrl/get_parkings'));
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/get_parkings'));
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return List<Map<String, dynamic>>.from(data['parkings']);
-    } else {
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return List<Map<String, dynamic>>.from(data['parkings']);
+      } else {
+        print("🚨 Server error while loading parkings: ${response.statusCode} - ${response.body}");
+        return [];
+      }
+    } catch (e) {
+      print("❌ Exception while fetching parkings: $e");
       return [];
     }
   }
