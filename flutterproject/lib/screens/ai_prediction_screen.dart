@@ -44,18 +44,16 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
           selectedLocation = locations.isNotEmpty ? locations[0] : null;
         });
       }
-    } catch (e) {
-      print("Failed to load parking locations: $e");
-    }
+    } catch (_) {}
   }
 
   Future<void> fetchAvailabilityForLocation(String location) async {
     setState(() => isLoading = true);
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/weekly_availability'),
+        Uri.parse('$baseUrl/weekly_availability_by_location'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'location': location}),
+        body: jsonEncode({'location': selectedLocation}),
       );
 
       if (response.statusCode == 200) {
@@ -63,15 +61,19 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
         setState(() {
           availability = Map.fromIterable(
             List.generate(7, (i) => i + 1),
-            value: (day) => Map<int, double>.from(
-              Map.from(data['availability'][day.toString()] ?? {}),
-            ),
+            value: (day) {
+              final raw = data['availability'][day.toString()] ?? {};
+              return Map<int, double>.fromEntries(
+                (raw as Map<String, dynamic>).entries.map(
+                  (e) => MapEntry(int.parse(e.key), (e.value as num).toDouble()),
+                ),
+              );
+            },
           );
         });
       }
-    } catch (e) {
-      print("Error: $e");
-    } finally {
+    } catch (_) {} 
+    finally {
       setState(() => isLoading = false);
     }
   }
@@ -84,9 +86,46 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
   }
 
   String formatHour(int hour) {
-    final int displayHour = hour <= 12 ? hour : hour - 12;
-    final String period = hour < 12 ? 'AM' : 'PM';
+    final displayHour = hour <= 12 ? hour : hour - 12;
+    final period = hour < 12 ? 'AM' : 'PM';
     return '$displayHour $period';
+  }
+
+  void showDayAvailabilitySheet(int dayIndex) {
+    final day = dayIndex + 1;
+    final dayData = availability[day] ?? {};
+
+    showModalBottomSheet(
+      context: context,
+      builder: (_) {
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Availability on ${days[dayIndex]}',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 12),
+              ...hours.map((hour) {
+                final prob = dayData[hour] ?? 1.0;
+                return ListTile(
+                  dense: true,
+                  leading: Text(formatHour(hour)),
+                  title: LinearProgressIndicator(
+                    value: prob,
+                    color: getColorForAvailability(prob),
+                    backgroundColor: Colors.grey[300],
+                  ),
+                  trailing: Text('${(prob * 100).round()}%'),
+                );
+              }).toList(),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -109,26 +148,21 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 10),
-
-                    // 🔻 Dropdown Selector
                     if (locations.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: DropdownButton<String>(
-                          value: selectedLocation,
-                          items: locations.map((loc) => DropdownMenuItem(
-                            value: loc,
-                            child: Text(loc),
-                          )).toList(),
-                          onChanged: (val) {
-                            if (val != null) {
-                              setState(() => selectedLocation = val);
-                              fetchAvailabilityForLocation(val);
-                            }
-                          },
-                        ),
+                      DropdownButton<String>(
+                        value: selectedLocation,
+                        items: locations.map((loc) => DropdownMenuItem(
+                          value: loc,
+                          child: Text(loc),
+                        )).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() => selectedLocation = val);
+                            fetchAvailabilityForLocation(val);
+                          }
+                        },
                       ),
-
+                    const SizedBox(height: 10),
                     Expanded(
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
@@ -137,11 +171,19 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
                             Row(
                               children: [
                                 const SizedBox(width: 48),
-                                ...days.map((d) => Container(
+                                ...List.generate(days.length, (i) {
+                                  return GestureDetector(
+                                    onTap: () => showDayAvailabilitySheet(i),
+                                    child: Container(
                                       width: 50,
                                       alignment: Alignment.center,
-                                      child: Text(d, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                    )),
+                                      child: Text(
+                                        days[i],
+                                        style: const TextStyle(fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  );
+                                }),
                               ],
                             ),
                             ...hours.map((hour) => Row(
@@ -161,7 +203,7 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
                                         child: Center(
                                           child: Text(
                                             '${(prob * 100).round()}%',
-                                            style: const TextStyle(fontSize: 11, color: Colors.black),
+                                            style: const TextStyle(fontSize: 11),
                                           ),
                                         ),
                                       );
@@ -191,7 +233,6 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
                       ),
                       child: const Text("View Weekly Summary"),
                     ),
-                    const SizedBox(height: 16),
                   ],
                 ),
               ),
