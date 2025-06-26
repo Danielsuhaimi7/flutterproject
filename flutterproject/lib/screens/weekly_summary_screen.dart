@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import '../config.dart';
+import 'package:flutterproject/screens/prediction_screen.dart';
 
 class WeeklySummaryScreen extends StatefulWidget {
   const WeeklySummaryScreen({super.key});
@@ -70,8 +71,19 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Weekly Parking Availability"),
-        backgroundColor: Colors.deepPurple,
+        title: const Text("Weekly Summary"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.analytics_outlined),
+            tooltip: 'Prediction',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => PredictionScreen()),
+              );
+            },
+          ),
+        ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())

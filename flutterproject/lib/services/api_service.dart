@@ -347,4 +347,39 @@ class ApiService {
       return false;
     }
   }
+
+  static Future<double?> predictAvailability({
+    required String location,
+    required int hour,
+    required int weekday,
+  }) async {
+    final url = Uri.parse('$baseUrl/predict_availability');
+    final response = await http.post(url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "location": location,
+        "hour": hour,
+        "weekday": weekday,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return (data['availability'] as num).toDouble();
+    } else {
+      return null;
+    }
+  }
+
+  static Future<List<String>> getParkingLocationNames() async {
+    final response = await http.get(Uri.parse('$baseUrl/get_parking_locations'));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return List<String>.from(data['locations']);
+    } else {
+      return [];
+    }
+  }
+  
 }
