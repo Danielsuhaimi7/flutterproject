@@ -36,7 +36,14 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen> {
         List<double> result = List.filled(7, 1.0);
         for (int i = 1; i <= 7; i++) {
           int index = (i == 1) ? 6 : i - 2;
-          result[index] = (raw[i.toString()] ?? 1.0).toDouble();
+          final dayData = raw[i.toString()];
+            if (dayData != null && dayData is Map<String, dynamic>) {
+              final values = dayData.values.map((v) => (v as num).toDouble()).toList();
+              final dailyAvg = values.isNotEmpty ? values.reduce((a, b) => a + b) / values.length : 1.0;
+              result[index] = dailyAvg;
+            } else {
+              result[index] = 1.0;
+            }
         }
 
         setState(() {

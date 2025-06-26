@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'weekly_summary_screen.dart';
+import '../config.dart';
 
 class AIPredictionScreen extends StatefulWidget {
   const AIPredictionScreen({super.key});
@@ -14,19 +15,49 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
   Map<int, Map<int, double>> availability = {};
   bool isLoading = true;
 
+  List<String> locations = [];
+  String? selectedLocation;
+
   final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   final hours = List.generate(11, (i) => i + 8); // 8 AM to 6 PM
 
   @override
   void initState() {
     super.initState();
-    fetchWeeklyAvailability();
+    loadLocationsAndFetch();
   }
 
-  Future<void> fetchWeeklyAvailability() async {
+  Future<void> loadLocationsAndFetch() async {
+    await fetchLocations();
+    if (selectedLocation != null) {
+      await fetchAvailabilityForLocation(selectedLocation!);
+    }
+  }
+
+  Future<void> fetchLocations() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/get_parking_locations'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        setState(() {
+          locations = List<String>.from(data['locations']);
+          selectedLocation = locations.isNotEmpty ? locations[0] : null;
+        });
+      }
+    } catch (e) {
+      print("Failed to load parking locations: $e");
+    }
+  }
+
+  Future<void> fetchAvailabilityForLocation(String location) async {
     setState(() => isLoading = true);
     try {
-      final response = await http.get(Uri.parse('http://192.168.1.110:5000/weekly_availability'));
+      final response = await http.post(
+        Uri.parse('$baseUrl/weekly_availability'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'location': location}),
+      );
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
@@ -37,11 +68,9 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
             ),
           );
         });
-      } else {
-        print("Error: ${response.statusCode}");
       }
     } catch (e) {
-      print("Exception: $e");
+      print("Error: $e");
     } finally {
       setState(() => isLoading = false);
     }
@@ -80,6 +109,26 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 10),
+
+                    // 🔻 Dropdown Selector
+                    if (locations.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: DropdownButton<String>(
+                          value: selectedLocation,
+                          items: locations.map((loc) => DropdownMenuItem(
+                            value: loc,
+                            child: Text(loc),
+                          )).toList(),
+                          onChanged: (val) {
+                            if (val != null) {
+                              setState(() => selectedLocation = val);
+                              fetchAvailabilityForLocation(val);
+                            }
+                          },
+                        ),
+                      ),
+
                     Expanded(
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
