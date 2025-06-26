@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import '../config.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -44,7 +45,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.1.110:5000/get_user_info'),
+        Uri.parse('$baseUrl/get_user_info'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'student_id': studentId}),
       );
@@ -74,7 +75,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (_formKey.currentState!.validate()) {
       try {
         final response = await http.post(
-          Uri.parse('http://192.168.1.110:5000/update_user_info'),
+          Uri.parse('$baseUrl/update_user_info'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
             'student_id': studentId,

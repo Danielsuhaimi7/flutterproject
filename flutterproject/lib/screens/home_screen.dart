@@ -450,12 +450,17 @@ class _HomeScreenState extends State<HomeScreen> {
           selectedItemColor: Colors.white,
           unselectedItemColor: Colors.white54,
           type: BottomNavigationBarType.fixed,
+
+          iconSize: 37,
+          selectedFontSize: 14,
+          unselectedFontSize: 12,
+
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
             BottomNavigationBarItem(icon: Icon(Icons.navigation), label: 'Navigation'),
             BottomNavigationBarItem(icon: Icon(Icons.report), label: 'Report'),
             BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
-            BottomNavigationBarItem(icon: Icon(Icons.auto_graph), label: 'Parking Prediction'),
+            BottomNavigationBarItem(icon: Icon(Icons.auto_graph), label: 'Prediction'),
           ],
         ),
       ),
