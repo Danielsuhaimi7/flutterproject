@@ -17,6 +17,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final confirmPasswordController = TextEditingController();
   final phoneController = TextEditingController();
 
+  bool isFormFilled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    nameController.addListener(_updateFormState);
+    idController.addListener(_updateFormState);
+    emailController.addListener(_updateFormState);
+    passwordController.addListener(_updateFormState);
+    confirmPasswordController.addListener(_updateFormState);
+    phoneController.addListener(_updateFormState);
+  }
+
+  void _updateFormState() {
+    final filled = nameController.text.trim().isNotEmpty &&
+        idController.text.trim().isNotEmpty &&
+        emailController.text.trim().isNotEmpty &&
+        passwordController.text.trim().isNotEmpty &&
+        confirmPasswordController.text.trim().isNotEmpty &&
+        phoneController.text.trim().isNotEmpty;
+
+    if (filled != isFormFilled) {
+      setState(() {
+        isFormFilled = filled;
+      });
+    }
+  }
+
   void registerUser() async {
     if (_formKey.currentState!.validate()) {
       if (passwordController.text != confirmPasswordController.text) {
@@ -32,7 +60,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         "email": emailController.text.trim(),
         "password": passwordController.text.trim(),
         "phone": phoneController.text.trim(),
-        "role": "user", // 👈 explicitly specify role
+        "role": "user",
       });
 
       if (success) {
@@ -124,7 +152,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           backgroundColor: Colors.deepPurple,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
-                        child: const Text("Create Account"),
+                        child: Text(
+                          "Create Account",
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: isFormFilled ? Colors.white : Colors.white70,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
