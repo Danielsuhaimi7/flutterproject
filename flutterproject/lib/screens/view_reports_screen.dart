@@ -13,7 +13,7 @@ class ViewReportsScreen extends StatefulWidget {
 class _ViewReportsScreenState extends State<ViewReportsScreen> {
   List<Map<String, dynamic>> reports = [];
   Set<int> settledReportIds = {};
-  Set<int> toggledSmallIcons = {}; // New: Track minimized icons
+  Set<int> toggledSmallIcons = {};
   bool isLoading = true;
 
   @override

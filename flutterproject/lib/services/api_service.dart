@@ -191,7 +191,6 @@ class ApiService {
     return false;
   }
 
-  // ✅ NEW: Get AI parking availability prediction
   static Future<List<Map<String, dynamic>>> getAvailabilityGraph() async {
     final response = await http.get(Uri.parse('$baseUrl/availability_graph'));
 

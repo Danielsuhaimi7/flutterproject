@@ -69,10 +69,8 @@ class _ReserveScreenState extends State<ReserveScreen> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('reservedSlot', selectedSlot!);
 
-    // Duration parsing
     final int hours = int.tryParse(duration.split(" ").first) ?? 1;
 
-    // Schedule notification 15 mins before expiry
     final now = DateTime.now();
     final endTime = now.add(Duration(hours: hours));
     await scheduleReminderNotification(endTime);

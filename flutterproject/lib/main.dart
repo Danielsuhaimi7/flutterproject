@@ -16,11 +16,9 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize timezones
   tz.initializeTimeZones();
   tz.setLocalLocation(tz.getLocation('Asia/Kuala_Lumpur'));
 
-  // Initialize local notification settings
   const AndroidInitializationSettings initializationSettingsAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher');
 
@@ -30,7 +28,6 @@ Future<void> main() async {
 
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
 
-  // Request notification permission (Android 13+)
   await _requestNotificationPermission();
 
   runApp(const MyApp());

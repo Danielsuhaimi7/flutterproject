@@ -120,7 +120,7 @@ class _WeeklySummaryScreenState extends State<WeeklySummaryScreen> {
                               sideTitles: SideTitles(
                                 showTitles: true,
                                 interval: 20,
-                                reservedSize: 42, // Ensures enough space for "100%"
+                                reservedSize: 42,
                                 getTitlesWidget: (value, _) => SizedBox(
                                   width: 40,
                                   child: Text(

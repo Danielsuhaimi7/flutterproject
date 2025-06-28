@@ -58,7 +58,7 @@ class _ReserveCustomParkingScreenState extends State<ReserveCustomParkingScreen>
     );
     if (picked != null) {
       setState(() => selectedDate = picked);
-      _loadLayout(); // refresh bookings
+      _loadLayout(); 
     }
   }
 
@@ -76,7 +76,7 @@ class _ReserveCustomParkingScreenState extends State<ReserveCustomParkingScreen>
 
     if (picked != null) {
       setState(() => selectedTime = picked);
-      _loadLayout(); // refresh bookings
+      _loadLayout();
     }
   }
 
@@ -110,7 +110,7 @@ class _ReserveCustomParkingScreenState extends State<ReserveCustomParkingScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Reserved Slot A${selectedSlotIndex! + 1}')),
       );
-      _loadLayout(); // Refresh UI after booking
+      _loadLayout();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to reserve slot')),
