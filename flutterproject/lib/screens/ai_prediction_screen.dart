@@ -19,7 +19,7 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
   String? selectedLocation;
 
   final days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  final hours = List.generate(11, (i) => i + 8); // 8 AM to 6 PM
+  final hours = List.generate(11, (i) => i + 8);
 
   @override
   void initState() {
@@ -92,7 +92,7 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
   }
 
   void showDayAvailabilitySheet(int dayIndex) {
-    final day = dayIndex + 1;
+    final day = (dayIndex + 1) % 7 + 1;
     final dayData = availability[day] ?? {};
 
     showModalBottomSheet(
@@ -193,7 +193,7 @@ class _AIPredictionScreenState extends State<AIPredictionScreen> {
                                       child: Text(formatHour(hour), style: const TextStyle(fontSize: 12)),
                                     ),
                                     ...List.generate(7, (dayIndex) {
-                                      final day = dayIndex + 1;
+                                      final day = (dayIndex + 1) % 7 + 1;
                                       final prob = availability[day]?[hour] ?? 1.0;
                                       return Container(
                                         width: 50,
